@@ -25,105 +25,112 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-PolarDesignerAudioProcessor::PolarDesignerAudioProcessor() :
-AudioProcessor (BusesProperties()
-                .withInput  ("Input",  AudioChannelSet::stereo(), true)
-                .withOutput ("Output", AudioChannelSet::stereo(), true)
-                ),
-layerA(nodeA),
-layerB(nodeB),
-saveStates(saveTree),
-doEq(0), doEqA(0), doEqB(0),
-nBands(5),
-vtsParams(*this, nullptr, "AAPolarDesigner",
-          {
-    std::make_unique<AudioParameterFloat> (ParameterID {"xOverF1", 1}, "Xover1", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
-                                           hzToZeroToOne(0, INIT_XOVER_FREQS_5B[0]), "",
-                                           AudioProcessorParameter::genericParameter,
-                                           [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(0, value))) + " Hz";},
-                                           nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"xOverF2", 1}, "Xover2", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
-                                           hzToZeroToOne(1, INIT_XOVER_FREQS_5B[1]), "",
-                                           AudioProcessorParameter::genericParameter,
-                                           [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(1, value))) + " Hz";},
-                                           nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"xOverF3", 1}, "Xover3", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
-                                           hzToZeroToOne(2, INIT_XOVER_FREQS_5B[2]), "",
-                                           AudioProcessorParameter::genericParameter,
-                                           [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(2, value))) + " Hz";},
-                                           nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"xOverF4", 1}, "Xover4", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
-                                           hzToZeroToOne(3, INIT_XOVER_FREQS_5B[3]), "",
-                                           AudioProcessorParameter::genericParameter,
-                                           [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(3, value))) + " Hz";},
-                                           nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"alpha1", 1}, "Polar1", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
-                                           0.0f, "", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"alpha2", 1}, "Polar2", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
-                                           0.0f, "", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"alpha3", 1}, "Polar3", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
-                                           0.0f, "", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"alpha4", 1}, "Polar4", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
-                                           0.0f, "", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"alpha5", 1}, "Polar5", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
-                                           0.0f, "", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"solo1", 1}, "Solo1", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"solo2", 1}, "Solo2", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"solo3", 1}, "Solo3", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"solo4", 1}, "Solo4", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"solo5", 1}, "Solo5", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"mute1", 1}, "Mute1", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"mute2", 1}, "Mute2", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"mute3", 1}, "Mute3", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"mute4", 1}, "Mute4", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"mute5", 1}, "Mute5", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"gain1", 1}, "Gain1", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
-                                           0.0f, "dB", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"gain2", 1}, "Gain2", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
-                                           0.0f, "dB", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"gain3", 1}, "Gain3", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
-                                           0.0f, "dB", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"gain4", 1}, "Gain4", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
-                                           0.0f, "dB", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"gain5", 1}, "Gain5", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
-                                           0.0f, "dB", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
-    std::make_unique<AudioParameterInt>   (ParameterID {"nrBands", 1}, "Nr. of Bands", 0, 4, 4, "",
-                                           [](int value, int maximumStringLength) {return String(value + 1);}, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"allowBackwardsPattern", 1}, "Allow Reverse Patterns", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterFloat> (ParameterID {"proximity", 1}, "Proximity", NormalisableRange<float>(-1.0f, 1.0f, 0.001f),
-                                           0.0f, "", AudioProcessorParameter::genericParameter,
-                                           [](float value, int maximumStringLength) { return std::abs(value) < 0.05f ? "off" : String(value, 2); }, nullptr),
-    std::make_unique<AudioParameterBool>  (ParameterID {"zeroDelayMode", 1}, "Zero Latency", false, "",
-                                           [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
-    std::make_unique<AudioParameterInt>   (ParameterID {"syncChannel", 1}, "Sync to Channel", 0, 4, 0, "",
-                                           [](int value, int maximumStringLength) {return value == 0 ? "none" : String(value);}, nullptr)
-}),
-firLen(FILTER_BANK_IR_LENGTH_AT_NATIVE_SAMPLE_RATE),
-dfEqOmniBuffer(1, DF_EQ_LEN), dfEqEightBuffer(1, DF_EQ_LEN),
-ffEqOmniBuffer(1, FF_EQ_LEN), ffEqEightBuffer(1, FF_EQ_LEN), isBypassed(false),
-soloActive(false), loadingFile(false), readingSharedParams(false), trackingActive(false),
-trackingDisturber(false), disturberRecorded(false), signalRecorded(false), currentSampleRate(48000)
+PolarDesignerAudioProcessor::PolarDesignerAudioProcessor() : AudioProcessor (BusesProperties()
+           .withInput  ("Input",  AudioChannelSet::stereo(), true)
+           .withOutput ("Output", AudioChannelSet::stereo(), true)
+           ),
+    layerA(nodeA),
+    layerB(nodeB),
+    saveStates(saveTree),
+    doEq(0), doEqA(0), doEqB(0),
+    termControlWaveform(1),
+    nBands(5),
+    vtsParams(*this, &undoManager, "AAPolarDesigner",
+           {
+        std::make_unique<AudioParameterFloat> (ParameterID {"xOverF1", 1}, "Xover1", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
+                                               hzToZeroToOne(0, INIT_XOVER_FREQS_5B[0]), "",
+                                               AudioProcessorParameter::genericParameter,
+                                               [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(0, value))) + " Hz";},
+                                               nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"xOverF2", 1}, "Xover2", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
+                                               hzToZeroToOne(1, INIT_XOVER_FREQS_5B[1]), "",
+                                               AudioProcessorParameter::genericParameter,
+                                               [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(1, value))) + " Hz";},
+                                               nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"xOverF3", 1}, "Xover3", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
+                                               hzToZeroToOne(2, INIT_XOVER_FREQS_5B[2]), "",
+                                               AudioProcessorParameter::genericParameter,
+                                               [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(2, value))) + " Hz";},
+                                               nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"xOverF4", 1}, "Xover4", NormalisableRange<float>(0.0f, 1.0f, 0.0001f),
+                                               hzToZeroToOne(3, INIT_XOVER_FREQS_5B[3]), "",
+                                               AudioProcessorParameter::genericParameter,
+                                               [&](float value, int maximumStringLength) {return String(std::roundf(hzFromZeroToOne(3, value))) + " Hz";},
+                                               nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"alpha1", 1}, "Polar1", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
+                                               0.0f, "", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"alpha2", 1}, "Polar2", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
+                                               0.0f, "", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"alpha3", 1}, "Polar3", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
+                                               0.0f, "", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"alpha4", 1}, "Polar4", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
+                                               0.0f, "", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"alpha5", 1}, "Polar5", NormalisableRange<float>(-0.5f, 1.0f, 0.01f),
+                                               0.0f, "", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 2); }, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"solo1", 1}, "Solo1", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"solo2", 1}, "Solo2", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"solo3", 1}, "Solo3", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"solo4", 1}, "Solo4", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"solo5", 1}, "Solo5", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"mute1", 1}, "Mute1", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"mute2", 1}, "Mute2", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"mute3", 1}, "Mute3", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"mute4", 1}, "Mute4", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"mute5", 1}, "Mute5", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"gain1", 1}, "Gain1", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
+                                               0.0f, "dB", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"gain2", 1}, "Gain2", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
+                                               0.0f, "dB", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"gain3", 1}, "Gain3", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
+                                               0.0f, "dB", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"gain4", 1}, "Gain4", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
+                                               0.0f, "dB", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"gain5", 1}, "Gain5", NormalisableRange<float>(-24.0f, 18.0f, 0.1f),
+                                               0.0f, "dB", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return String(value, 1); }, nullptr),
+        std::make_unique<AudioParameterInt>   (ParameterID {"nrBands", 1}, "Nr. of Bands", 0, 4, 4, "",
+                                               [](int value, int maximumStringLength) {return String(value + 1);}, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"allowBackwardsPattern", 1}, "Allow Reverse Patterns", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterFloat> (ParameterID {"proximity", 1}, "Proximity", NormalisableRange<float>(-1.0f, 1.0f, 0.001f),
+                                               0.0f, "", AudioProcessorParameter::genericParameter,
+                                               [](float value, int maximumStringLength) { return std::abs(value) < 0.05f ? "0.00" : String(value, 2); }, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"proximityOnOff", 1}, "ProximityOnOff", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off"; }, nullptr),
+        std::make_unique<AudioParameterBool>  (ParameterID {"zeroDelayMode", 1}, "Zero Latency", false, "",
+                                               [](bool value, int maximumStringLength) {return (value) ? "on" : "off";}, nullptr),
+        std::make_unique<AudioParameterInt>   (ParameterID {"syncChannel", 1}, "Sync to Channel", 0, 4, 0, "",
+                                               [](int value, int maximumStringLength) {return value == 0 ? "none" : String(value);}, nullptr)
+           }),
+    firLen(FILTER_BANK_IR_LENGTH_AT_NATIVE_SAMPLE_RATE),
+    dfEqOmniBuffer(1, DF_EQ_LEN), dfEqEightBuffer(1, DF_EQ_LEN),
+    ffEqOmniBuffer(1, FF_EQ_LEN), ffEqEightBuffer(1, FF_EQ_LEN),
+    isBypassed(false),
+    soloActive(false), loadingFile(false), readingSharedParams(false),
+    trackingActive(false),
+    trackingDisturber(false),
+    disturberRecorded(false),
+    signalRecorded(false),
+    currentSampleRate(48000)
 {
     
     vtsParams.addParameterListener("xOverF1", this);
@@ -154,6 +161,8 @@ trackingDisturber(false), disturberRecorded(false), signalRecorded(false), curre
     allowBackwardsPattern = vtsParams.getRawParameterValue("allowBackwardsPattern");
     vtsParams.addParameterListener("proximity", this);
     proxDistance = vtsParams.getRawParameterValue("proximity");
+    vtsParams.addParameterListener("proximityOnOff", this);
+    proxOnOff = vtsParams.getRawParameterValue("proximityOnOff");
     vtsParams.addParameterListener("zeroDelayMode", this);
     zeroDelayMode = vtsParams.getRawParameterValue("zeroDelayMode");
     vtsParams.addParameterListener("syncChannel", this);
@@ -178,7 +187,10 @@ trackingDisturber(false), disturberRecorded(false), signalRecorded(false), curre
     delay.setDelayTime (std::ceilf(static_cast<float>(FILTER_BANK_IR_LENGTH_AT_NATIVE_SAMPLE_RATE) / 2 - 1) / FILTER_BANK_NATIVE_SAMPLE_RATE);
     
     oldProxDistance = proxDistance->load();
-    
+
+    termControlWaveform.setRepaintRate(30);
+    termControlWaveform.setBufferSize(256);
+
     startTimer(50);
 }
 
@@ -290,15 +302,15 @@ void PolarDesignerAudioProcessor::prepareToPlay (double sampleRate, int samplesP
     
     dsp::ProcessSpec eqSpec2{ currentSampleRate, static_cast<uint32>(currentBlockSize), 1 };
     dfEqEightConv.prepare (eqSpec2);
-    dfEqEightConv.loadImpulseResponse(std::move(dfEqEightBuffer), EQ_SAMPLE_RATE, dsp::Convolution::Stereo::no, dsp::Convolution::Trim::no, dsp::Convolution::Normalise::no);
+    dfEqOmniConv.loadImpulseResponse(std::move(dfEqEightBuffer), EQ_SAMPLE_RATE, dsp::Convolution::Stereo::no, dsp::Convolution::Trim::no, dsp::Convolution::Normalise::no);
     
     dsp::ProcessSpec eqSpec3{ currentSampleRate, static_cast<uint32>(currentBlockSize), 1 };
     ffEqOmniConv.prepare (eqSpec3); // must be called before loading an ir
-    ffEqOmniConv.loadImpulseResponse(std::move(ffEqOmniBuffer), EQ_SAMPLE_RATE, dsp::Convolution::Stereo::no, dsp::Convolution::Trim::no, dsp::Convolution::Normalise::no);
+    dfEqOmniConv.loadImpulseResponse(std::move(ffEqOmniBuffer), EQ_SAMPLE_RATE, dsp::Convolution::Stereo::no, dsp::Convolution::Trim::no, dsp::Convolution::Normalise::no);
     
     dsp::ProcessSpec eqSpec4{ currentSampleRate, static_cast<uint32>(currentBlockSize), 1 };
     ffEqEightConv.prepare (eqSpec4);
-    ffEqEightConv.loadImpulseResponse(std::move(dfEqEightBuffer), EQ_SAMPLE_RATE, dsp::Convolution::Stereo::no, dsp::Convolution::Trim::no, dsp::Convolution::Normalise::no);
+    dfEqOmniConv.loadImpulseResponse(std::move(dfEqEightBuffer), EQ_SAMPLE_RATE, dsp::Convolution::Stereo::no, dsp::Convolution::Trim::no, dsp::Convolution::Normalise::no);
     
     dfEqOmniConv.reset();
     dfEqEightConv.reset();
@@ -357,14 +369,15 @@ void PolarDesignerAudioProcessor::processBlock (AudioBuffer<float>& buffer, Midi
     createOmniAndEightSignals (buffer);
     
     // proximity compensation filter
-    if (zeroDelayMode->load() < 0.5f && proxDistance->load() < -0.05) // reduce proximity effect only on figure-of-eight
+    auto proximity = (proxOnOff->load() == 1.f) ? proxDistance->load() : 0.f;
+    if (zeroDelayMode->load() < 0.5f && proximity < -0.05) // reduce proximity effect only on figure-of-eight
     {
         float* writePointerEight = omniEightBuffer.getWritePointer (1);
         dsp::AudioBlock<float> eightBlock(&writePointerEight, 1, numSamples);
         dsp::ProcessContextReplacing<float> contextProxEight(eightBlock);
         proxCompIIR.process(contextProxEight);
     }
-    else if (zeroDelayMode->load() < 0.5f && proxDistance->load() > 0.05) // apply proximity to omni
+    else if (zeroDelayMode->load() < 0.5f && proximity > 0.05) // apply proximity to omni
     {
         float* writePointerOmni = omniEightBuffer.getWritePointer (0);
         dsp::AudioBlock<float> omniBlock(&writePointerOmni, 1, numSamples);
@@ -438,7 +451,12 @@ void PolarDesignerAudioProcessor::processBlock (AudioBuffer<float>& buffer, Midi
         }
         convolversReady = true;
     }
-    
+
+    // !J! Deprecated:
+//    getPlayHead()->getCurrentPosition(info);
+    getPlayHead()->getPosition();
+    termControlWaveform.pushBuffer(buffer);
+
     if (trackingActive)
         trackSignalEnergy();
     
@@ -564,7 +582,7 @@ void PolarDesignerAudioProcessor::setStateInformation (const void* data, int siz
         }
     }
     nBands = static_cast<int>(nBandsPtr->load()) + 1;
-    didNRActiveBandsChange = true;
+    activeBandsChanged = true;
     zeroDelayModeChanged = true;
     ffDfEqChanged = true;
     computeAllFilterCoefficients();
@@ -597,7 +615,7 @@ void PolarDesignerAudioProcessor::parameterChanged (const String &parameterID, f
     {
         nBands = static_cast<int> (nBandsPtr->load()) + 1;
         resetXoverFreqs();
-        didNRActiveBandsChange = true;
+        activeBandsChanged = true;
         computeAllFilterCoefficients();
         initAllConvolvers();
     }
@@ -657,6 +675,7 @@ void PolarDesignerAudioProcessor::parameterChanged (const String &parameterID, f
             
             paramsToSync.nrActiveBands = nBandsPtr->load();
             paramsToSync.proximity = proxDistance->load();
+            paramsToSync.proximityOnOff = proxOnOff->load();
             
             paramsToSync.allowBackwardsPattern = allowBackwardsPattern->load();
             
@@ -701,6 +720,10 @@ void PolarDesignerAudioProcessor::parameterChanged (const String &parameterID, f
         else if (parameterID == "proximity")
         {
             paramsToSync.proximity = proxDistance->load();
+        }
+        else if (parameterID == "proximityOnOff")
+        {
+            paramsToSync.proximityOnOff = proxOnOff->load();
         }
         else if (parameterID == "zeroDelayMode")
         {
@@ -1007,12 +1030,15 @@ Result PolarDesignerAudioProcessor::loadPreset(const File& presetFile)
     
     x = parsedJson.getProperty ("proximity", parsedJson);
     vtsParams.getParameter ("proximity")->setValueNotifyingHost (vtsParams.getParameter("proximity")->convertTo0to1(x));
+
+    x = parsedJson.getProperty("proximityOnOff", parsedJson);
+    vtsParams.getParameter("proximityOnOff")->setValueNotifyingHost(vtsParams.getParameter("proximityOnOff")->convertTo0to1(x));
     
     loadingFile = false;
     
     // set parameters
     nBands = static_cast<int>(nBandsPtr->load()) + 1;
-    didNRActiveBandsChange = true;
+    activeBandsChanged = true;
     computeAllFilterCoefficients();
     initAllConvolvers();
     repaintDEQ = true;
@@ -1055,6 +1081,7 @@ Result PolarDesignerAudioProcessor::savePreset (File destination)
     jsonObj->setProperty ("mute5", muteBand[4]->load());
     jsonObj->setProperty ("ffDfEq", doEq);
     jsonObj->setProperty ("proximity", proxDistance->load());
+    jsonObj->setProperty("proximityOnOff", proxOnOff->load());
     
     String jsonString = JSON::toString (var (jsonObj), false, 2);
     if (destination.replaceWithText (jsonString))
@@ -1467,7 +1494,10 @@ void PolarDesignerAudioProcessor::timerCallback()
         
         if (allowBackwardsPattern->load() != paramsToSync.allowBackwardsPattern)
             vtsParams.getParameter ("allowBackwardsPattern")->setValueNotifyingHost (vtsParams.getParameterRange ("allowBackwardsPattern").convertTo0to1 (paramsToSync.allowBackwardsPattern));
-        
+
+        if (proxOnOff->load() != paramsToSync.proximityOnOff)
+            vtsParams.getParameter("proximityOnOff")->setValueNotifyingHost(vtsParams.getParameterRange("proximityOnOff").convertTo0to1(paramsToSync.proximityOnOff));
+
         if (paramsToSync.ffDfEq != doEq)
         {
             setEqState(paramsToSync.ffDfEq);

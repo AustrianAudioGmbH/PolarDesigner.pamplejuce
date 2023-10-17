@@ -33,7 +33,7 @@
 struct ParamsToSync {
     int nrActiveBands, ffDfEq;
     float xOverFreqs[4], dirFactors[5], gains[5], proximity;
-    bool solo[5], mute[5], allowBackwardsPattern, zeroDelayMode, abLayer;
+    bool solo[5], mute[5], allowBackwardsPattern, proximityOnOff, zeroDelayMode, abLayer;
     bool paramsValid = false;
 };
 
@@ -108,7 +108,7 @@ public:
     float getXoverSliderRangeStart (int sliderNum);
     float getXoverSliderRangeEnd (int sliderNum);
     Atomic<bool> repaintDEQ = true;
-    Atomic<bool> didNRActiveBandsChange = true;
+    Atomic<bool> activeBandsChanged = true;
     Atomic<bool> zeroDelayModeChanged = true;
     Atomic<bool> ffDfEqChanged = true;
     bool getDisturberRecorded() {return disturberRecorded;}
@@ -132,6 +132,10 @@ public:
     Atomic<bool> abLayerChanged = false;
     
     bool convolversReady;
+
+    AudioVisualiserComponent termControlWaveform;
+    AudioPlayHead::CurrentPositionInfo info;
+    UndoManager undoManager;
     
     // initial xover frequencies for several numbers of bands
     const float INIT_XOVER_FREQS_2B[1] = {1000.0f};
@@ -201,6 +205,7 @@ private:
     std::atomic<float>* allowBackwardsPattern;
     
     std::atomic<float>* proxDistance;
+    std::atomic<float>* proxOnOff;
     
     std::atomic<float>* zeroDelayMode;
     std::atomic<float>* soloBand[5];
@@ -226,7 +231,7 @@ private:
     
     double currentSampleRate;
     int currentBlockSize;
-    
+
     //==============================================================================
     void resetXoverFreqs();
     void computeAllFilterCoefficients();
