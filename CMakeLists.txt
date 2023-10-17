@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.24.1)
 
 # This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include (PolarDesignerVersion)
+include (PamplejuceVersion)
 
 # Change me!
 # This is the internal name of the project and the name of JUCE's shared code "target"
@@ -18,7 +18,7 @@ set(PROJECT_NAME "PolarDesigner")
 #   set(PROJECT_NAME "MyPlugin_v${MAJOR_VERSION}")
 # Doing so enables major versions to show up in IDEs and DAWs as separate plugins
 # allowing you to change parameters and behavior without breaking existing user projects
-set(PRODUCT_NAME "PolarDesigner_${MAJOR_VERSION}")
+set(PRODUCT_NAME "PolarDesigner")
 
 # Change me! Used for the MacOS bundle name and Installers
 set(COMPANY_NAME "Austrian Audio GMbH")
@@ -34,7 +34,7 @@ set(FORMATS Standalone AU VST3 AUv3)
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 
 # Configures universal binaries in CI
-include(PolarDesignerMacOS)
+include(PamplejuceMacOS)
 
 # Couple tweaks that IMO should be JUCE defaults
 include(JUCEDefaults)
@@ -144,7 +144,7 @@ target_link_libraries(SharedCode
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 
 # IPP support, comment out to disable
-include(PolarDesignerIPP)
+include(PamplejuceIPP)
 
 # Everything related to the tests target
 include(Tests)
