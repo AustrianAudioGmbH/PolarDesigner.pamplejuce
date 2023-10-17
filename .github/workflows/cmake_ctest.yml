@@ -105,7 +105,6 @@ jobs:
       if: ${{ matrix.name == 'macOS' }}
       with:
         p12-file-base64: ${{ secrets.DEV_ID_APP_CERT }}
-        p12-password: ${{ secrets.DEV_ID_APP_PASSWORD }}
 
     - name: Configure
       shell: bash
