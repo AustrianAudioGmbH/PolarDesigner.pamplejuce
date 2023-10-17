@@ -771,7 +771,6 @@ public:
                       bool isMouseOverButton,
                       bool isButtonDown) override
     {
-        const float boxSize = w * 0.8f;
 
         Rectangle<float> buttonArea(x, y, w, h);
 
@@ -975,24 +974,4 @@ public:
         g.setColour (Colours::white.withAlpha(0.8f));
         g.strokePath (path, PathStrokeType (1.0f));
     }
-    
-
 };
-
-class LaF2 : public LookAndFeel_V2
-{
-public:
-    Component* getParentComponentForMenuOptions (const PopupMenu::Options& options) override
-    {
-    #if JUCE_IOS
-        if (PluginHostType::getPluginLoadedAs() == AudioProcessor::wrapperType_AudioUnitv3)
-        {
-            if (options.getParentComponent() == nullptr && options.getTargetComponent() != nullptr)
-                return options.getTargetComponent()->getTopLevelComponent();
-        }
-    #endif
-        
-        return LookAndFeel_V2::getParentComponentForMenuOptions (options);
-    }
-};
-    

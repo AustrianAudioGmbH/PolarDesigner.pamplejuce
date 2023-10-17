@@ -51,6 +51,7 @@
 
 #include "TitleBarPaths.h"
 #include "ImgPaths.h"
+#include "../resources/lookAndFeel/MainLookAndFeel.h"
 
 #ifdef JUCE_OSC_H_INCLUDED
 #include "OSCStatus.h"
@@ -146,17 +147,23 @@ public:
     ~AALogo() {};
     const int getComponentSize() override { return 40; }
     void setMaxSize (int maxSize) override {};
+
+    void setLogoColour(Colour logoColour) {
+        logoColour_ = logoColour;
+        repaint();
+    }
+
     void paint (Graphics& g) override
     {
         aaLogoPath.applyTransform (aaLogoPath.getTransformToScaleToFit (getLocalBounds().toFloat(), true, Justification::centred));
-        // Colour AARed = Colour(155,35,35);
-        g.setColour (Colours::white);
+        g.setColour (logoColour_);
         g.strokePath (aaLogoPath, PathStrokeType (0.1f));
         g.fillPath (aaLogoPath);
     };
     
 private:
     Path aaLogoPath;
+    Colour logoColour_ = Colour(Colours::white);
 };
 
 
@@ -343,32 +350,6 @@ private:
     Path DirectivityPath;
 };
 
-class  TitleBarAAText : public Component
-{
-public:
-    TitleBarAAText() {
-        titlePath.loadPathFromData(aaFontData, sizeof(aaFontData));
-    };
-    ~TitleBarAAText() {};
-
-    void resized() override
-    {
-        repaint();
-    }
-
-    void paint(Graphics& g) override
-    {
-        Rectangle<int> bounds = getLocalBounds();
-        g.setColour(Colours::white);
-        titlePath.applyTransform(titlePath.getTransformToScaleToFit(getLocalBounds().toFloat(), true, Justification::left));
-        g.strokePath(titlePath, PathStrokeType(0.1f));
-        g.fillPath(titlePath);
-    };
-
-private:
-    Path titlePath;
-};
-
 class  TitleBarPDText : public Component
 {
 public:
@@ -391,23 +372,36 @@ public:
     void paint(Graphics& g) override
     {
         Rectangle<int> bounds = getLocalBounds();
-        regularFont.setHeight(bounds.getHeight()/1.5f);
+        regularFont.setHeight(bounds.getHeight()*0.75f);
 
-        g.setColour(Colours::white);
+        g.setColour(isEnabled() ? mainLaF.mainTextColor : mainLaF.mainTextDisabledColor);
         g.setFont(regularFont);
         g.drawFittedText(regularText, bounds.toNearestInt(), Justification::left, 1);
     };
 
 private:
-    Font regularFont = Font(25.f);
+    Font regularFont = Font(22.f);
     juce::String regularText = "Regular";
+    MainLookAndFeel mainLaF;
 };
 
-class  TitleLine : public Component
+class  TitleBarTextLabel : public Component
 {
 public:
-    TitleLine() {};
-    ~TitleLine() {};
+    TitleBarTextLabel() {};
+    ~TitleBarTextLabel() {};
+
+    void setTitle(String newRegularText) {
+        regularText = newRegularText;
+    }
+
+    String &getTitle() {
+        return regularText;
+    }
+
+    void setFont(Typeface::Ptr newRegularFont) {
+        regularFont = newRegularFont;
+    }
 
     void resized() override
     {
@@ -417,12 +411,18 @@ public:
     void paint(Graphics& g) override
     {
         Rectangle<int> bounds = getLocalBounds();
+        int fontSize = getTopLevelComponent()->getHeight() * 0.025f;
+        regularFont.setHeight(fontSize);
 
-        g.setColour((Colours::white).withMultipliedAlpha(0.5));
-        g.fillAll();
+        g.setColour(isEnabled() ? mainLaF.mainTextColor : mainLaF.mainTextDisabledColor);
+        g.setFont(regularFont);
+        g.drawFittedText(regularText, bounds.toNearestInt(), Justification::right, 1);
     };
 
 private:
+    Font regularFont = Font(16.f);
+    juce::String regularText = "Regular";
+    MainLookAndFeel mainLaF;
 };
 
 class IEMLogo : public Component
