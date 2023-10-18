@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include <../JuceLibraryCode/JuceHeader.h>
-#include "../resources/lookAndFeel/MainLookAndFeel.h"
+#include <JuceHeader.h>
+#include "../lookAndFeel/MainLookAndFeel.h"
 //==============================================================================
 /*
 */
