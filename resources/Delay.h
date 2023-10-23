@@ -163,7 +163,7 @@ private:
     //==============================================================================
     ProcessSpec spec = {-1, 0, 0};
     float delay;
-    int delayInSamples = 0;
+    unsigned int delayInSamples = 0;
     bool bypassed = false;
     int writePosition = 0;
     AudioBuffer<float> buffer;
