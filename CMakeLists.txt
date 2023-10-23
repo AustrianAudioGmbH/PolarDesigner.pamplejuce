@@ -51,6 +51,9 @@ add_subdirectory(JUCE)
 # This adds the melatonin inspector module
 add_subdirectory (modules/melatonin_inspector)
 
+# !J! Not sure if this is the right approach to take
+add_subdirectory (JuceLibraryCode)
+
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
     # Icons for the standalone app
@@ -83,6 +86,7 @@ juce_add_plugin("${PROJECT_NAME}"
 # This lets us use our code in both the JUCE targets and our Test target
 # Without running into ODR violations
 add_library(SharedCode INTERFACE)
+
 
 # C++20, please
 # Use cxx_std_23 for C++23 (as of CMake v 3.20)
@@ -140,6 +144,11 @@ target_link_libraries(SharedCode
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags)
+
+add_custom_target(host_header DEPENDS
+    $<TARGET_PROPERTY:${PROJECT_NAME},JUCE_GENERATED_SOURCES_DIRECTORY>/JuceHeader.h
+)
+
 
 # Link the JUCE plugin targets our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
