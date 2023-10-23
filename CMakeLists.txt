@@ -46,12 +46,12 @@ include(JUCEDefaults)
 # On Github Actions, this is done as a part of actions/checkout
 add_subdirectory(JUCE)
 
+
 # Add any other modules you want modules here, before the juce_add_plugin call
 # juce_add_module(modules/my_module)
 
 # This adds the melatonin inspector module
 add_subdirectory (modules/melatonin_inspector)
-
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
@@ -96,8 +96,16 @@ target_compile_features(SharedCode INTERFACE cxx_std_20)
 # Just ensure you employ CONFIGURE_DEPENDS so the build system picks up changes
 # If you want to appease the CMake gods and avoid globs, manually add files like so:
 # set(SourceFiles Source/PluginEditor.h Source/PluginProcessor.h Source/PluginEditor.cpp Source/PluginProcessor.cpp)
-file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/JuceLibraryCode/*.h")
-target_sources(SharedCode INTERFACE ${SourceFiles})
+file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h")
+file(GLOB_RECURSE SourceLookAndFeelFiles CONFIGURE_DEPENDS" ${CMAKE_CURRENT_SOURCE_DIR}/resources/lookAndFeel/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/resources/lookAndFeel/*.cpp")
+
+target_sources(SharedCode INTERFACE ${SourceFiles} ${SourceLookAndFeelFiles})
+
+# We intend to only use BinaryData.h from JuceLibraryCode
+#juce_add_binary_data("${PROJECT_NAME}")
+
+juce_generate_juce_header("${PROJECT_NAME}")
+
 
 # Adds a BinaryData target for embedding assets into the binary
 include(Assets)
@@ -135,11 +143,18 @@ target_link_libraries(SharedCode
     INTERFACE
     Assets
     melatonin_inspector
-    juce_audio_utils
-    juce_audio_processors
-    juce_dsp
-    juce_gui_basics
-    juce_gui_extra
+    juce_audio_basics
+	juce_audio_devices
+	juce_audio_formats
+	juce_audio_processors
+	juce_audio_utils
+	juce_core
+	juce_dsp
+	juce_events
+	juce_graphics
+	juce_gui_basics
+	juce_gui_extra
+	juce_opengl
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags)
