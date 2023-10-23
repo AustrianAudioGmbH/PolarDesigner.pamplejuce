@@ -39,8 +39,6 @@ include(PamplejuceMacOS)
 # Couple tweaks that IMO should be JUCE defaults
 include(JUCEDefaults)
 
-# !J! Not sure if this is the right approach to take
-target_include_directories(SharedCode PRIVATE JuceLibraryCode) 
 
 # JUCE is setup as a submodule in the /JUCE folder
 # Locally, you must run `git submodule update --init --recursive` once
@@ -153,6 +151,9 @@ add_custom_target(host_header DEPENDS
 
 # Link the JUCE plugin targets our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
+
+# !J! Not sure if this is the right approach to take
+include(JuceLibraryCode) 
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)
