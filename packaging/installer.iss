@@ -1,5 +1,5 @@
 #define Version Trim(FileRead(FileOpen("..\VERSION")))
-#define ProjectName 'Austrian Audio Plugins'
+#define ProjectName GetEnv('PROJECT_NAME')
 #define ProductName 'PolarDesigner'
 #define Publisher 'AustrianAudio'
 #define Year GetDateTimeString("yyyy","","")
