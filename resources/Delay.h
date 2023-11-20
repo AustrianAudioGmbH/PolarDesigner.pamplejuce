@@ -50,7 +50,7 @@ public:
     Delay()
     {
     }
-    ~Delay() {}
+     ~Delay()  {} ;
 
     void setDelayTime (float delayTimeInSeconds)
     {

@@ -78,7 +78,7 @@ class PolarDesignerAudioProcessor  : public AudioProcessor, public AudioProcesso
 public:
     //==============================================================================
     PolarDesignerAudioProcessor();
-    ~PolarDesignerAudioProcessor();
+    ~PolarDesignerAudioProcessor() override;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
