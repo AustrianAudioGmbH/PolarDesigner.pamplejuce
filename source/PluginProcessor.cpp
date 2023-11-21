@@ -863,7 +863,7 @@ void PolarDesignerAudioProcessor::computeFilterCoefficients(int crossoverNr)
        float* lp2hpCoeffs = lp2hp->getRawCoefficients();
        for (int i=0; i<firLen; ++i) // highpass transform
        {
-           *(filterBufferPointer+i) = *(lp2hpCoeffs+i) * std::cosf(MathConstants<float>::pi * (i - (firLen - 1) / 2));
+           *(filterBufferPointer+i) = *(lp2hpCoeffs+i) * std::cosf(MathConstants<float>::pi * (i - (firLen - 1.0f) / 2.0f));
        }
    }
 

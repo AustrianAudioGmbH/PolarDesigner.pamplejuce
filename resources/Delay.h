@@ -47,10 +47,9 @@ class Delay : private ProcessorBase
 {
 public:
 
-    Delay()
-    {
-    }
-     ~Delay()  {} ;
+    Delay() {};
+
+    ~Delay() override {} ;
 
     void setDelayTime (float delayTimeInSeconds)
     {
