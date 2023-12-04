@@ -47,9 +47,9 @@ class Delay : private ProcessorBase
 {
 public:
 
-    Delay() {};
+    Delay() {}
 
-    ~Delay() override {} ;
+    ~Delay() override {}
 
     void setDelayTime (float delayTimeInSeconds)
     {
@@ -67,18 +67,25 @@ public:
         prepare(spec);
     }
 
-    const int getDelayInSamples()
+    unsigned int getDelayInSamples()
     {
-        return bypassed ? 0 : delayInSamples;
+        if (bypassed)
+        {
+            return 0;
+        }
+        else
+        {
+            return delayInSamples;
+        }
     }
 
     void prepare (const ProcessSpec& specs) override
     {
         spec = specs;
 
-        delayInSamples = roundToInt(delay * specs.sampleRate);
+        delayInSamples = static_cast<unsigned int> (roundToInt (delay * specs.sampleRate));
 
-        buffer.setSize(specs.numChannels, specs.maximumBlockSize + delayInSamples);
+        buffer.setSize(static_cast<int> (specs.numChannels), static_cast<int> (specs.maximumBlockSize + delayInSamples));
         buffer.clear();
         writePosition = 0;
     }
@@ -101,22 +108,22 @@ public:
             getReadWritePositions(false, (int) L, startIndex, blockSize1, blockSize2);
 
             for (int ch = 0; ch < nCh; ch++)
-                buffer.copyFrom(ch, startIndex, abIn.getChannelPointer(ch), blockSize1);
+                buffer.copyFrom(ch, startIndex, abIn.getChannelPointer(static_cast<size_t> (ch)), blockSize1);
 
             if (blockSize2 > 0)
                 for (int ch = 0; ch < nCh; ch++)
-                    buffer.copyFrom(ch, 0, abIn.getChannelPointer(ch) + blockSize1, blockSize2);
+                    buffer.copyFrom(ch, 0, abIn.getChannelPointer(static_cast<size_t> (ch)) + blockSize1, blockSize2);
 
 
             // read from delay line
             getReadWritePositions(true, (int) L, startIndex, blockSize1, blockSize2);
 
             for (int ch = 0; ch < nCh; ch++)
-                FloatVectorOperations::copy(abOut.getChannelPointer(ch), buffer.getReadPointer(ch) + startIndex, blockSize1);
+                FloatVectorOperations::copy(abOut.getChannelPointer(static_cast<size_t> (ch)), buffer.getReadPointer(ch) + startIndex, blockSize1);
 
             if (blockSize2 > 0)
                 for (int ch = 0; ch < nCh; ch++)
-                    FloatVectorOperations::copy(abOut.getChannelPointer(ch) + blockSize1, buffer.getReadPointer(ch), blockSize2);
+                    FloatVectorOperations::copy(abOut.getChannelPointer(static_cast<size_t> (ch)) + blockSize1, buffer.getReadPointer(ch), blockSize2);
 
 
             writePosition += L;
@@ -135,7 +142,7 @@ public:
         int pos = writePosition;
         if (read)
         {
-            pos = writePosition - delayInSamples;
+            pos = static_cast<int> (static_cast<unsigned int> (writePosition) - delayInSamples);
         }
         if (pos < 0)
             pos = pos + L;

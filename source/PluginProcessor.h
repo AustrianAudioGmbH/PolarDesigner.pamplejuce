@@ -152,7 +152,7 @@ public:
     float oldProxDistanceA = 0;
     float oldProxDistanceB = 0;
     Atomic<bool> abLayerChanged = false;
-    
+
     bool convolversReady;
 
     AudioVisualiserComponent termControlWaveform;
@@ -232,7 +232,9 @@ private:
     std::atomic<float>* zeroDelayMode;
     std::atomic<float>* soloBand[5];
     std::atomic<float>* muteBand[5];
-    
+
+    std::atomic<float> *trimPosition;
+
     bool isBypassed;
     bool soloActive;
     bool loadingFile;

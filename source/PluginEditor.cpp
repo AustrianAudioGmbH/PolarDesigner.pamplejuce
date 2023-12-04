@@ -352,6 +352,7 @@ PolarDesignerAudioProcessorEditor::PolarDesignerAudioProcessorEditor (PolarDesig
     zeroDelayModeChange();
     
     addAndMakeVisible(&trimSlider);
+    trimSlider.addListener(this);
 
     addAndMakeVisible(&tbTrimSliderCenterPointer);
     tbTrimSliderCenterPointer.setButtonText("Trim Slider Pointer");
