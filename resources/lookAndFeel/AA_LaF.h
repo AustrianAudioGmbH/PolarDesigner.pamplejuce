@@ -244,11 +244,11 @@ public:
 
         if (! label.isBeingEdited())
         {
-            const float alpha = label.isEnabled() ? 1.0f : 0.5f;
+            const float editingAlpha = label.isEnabled() ? 1.0f : 0.5f;
             const Font font (aaRegular);
 
             //g.setColour (ClText.withMultipliedAlpha (alpha));
-            g.setColour (ClText.withMultipliedAlpha(alpha));
+            g.setColour (ClText.withMultipliedAlpha(editingAlpha));
             g.setFont (getLabelFont(label));
 
             Rectangle<int> textArea (label.getBorderSize().subtractedFrom (label.getLocalBounds()));
@@ -256,7 +256,7 @@ public:
             g.drawFittedText (label.getText(), textArea, label.getJustificationType(), 1,
                               label.getMinimumHorizontalScale());
 
-            g.setColour (label.findColour (Label::outlineColourId).withMultipliedAlpha (alpha));
+            g.setColour (label.findColour (Label::outlineColourId).withMultipliedAlpha (editingAlpha));
         }
         else if (label.isEnabled())
         {
@@ -275,9 +275,9 @@ public:
         g.setColour (Colours::white.withMultipliedAlpha(0.5f));
 
         Path triangle;
-        triangle.startNewSubPath(w, h);
-        triangle.lineTo(0.5 * w, h);
-        triangle.lineTo(w, 0.5 * h);
+        triangle.startNewSubPath(static_cast<float>(w), static_cast<float>(h));
+        triangle.lineTo(static_cast<float>(0.5 * w), static_cast<float>(h));
+        triangle.lineTo(static_cast<float>(w), static_cast<float>(0.5 * h));
         triangle.closeSubPath();
 
         g.fillPath(triangle);
@@ -296,7 +296,7 @@ public:
         else
         {
             Path p;
-            p.addRoundedRectangle(0, 0, width, height, 12.0f);
+            p.addRoundedRectangle(static_cast<float>(0), static_cast<float>(0), static_cast<float>(width), static_cast<float>(height), 12.0f);
             //g.setColour (ClTextTextboxbg);
             g.setColour (textEditor.findColour (TextEditor::backgroundColourId));
             g.fillPath (p);
@@ -313,13 +313,13 @@ public:
                 if (textEditor.hasKeyboardFocus (true) && ! textEditor.isReadOnly())
                 {
                     g.setColour (Colours::white.withMultipliedAlpha(0.8f));
-                    g.drawRoundedRectangle (0.5, 0.5, width-1, height-1, (height-1)/2.0f, 0.8);
+                    g.drawRoundedRectangle (0.5, 0.5, static_cast<float>(width-1), static_cast<float>(height-1), static_cast<float>(height-1)/2.0f, 0.8f);
 
                 }
                 else
                 {
                     g.setColour (Colours::white.withMultipliedAlpha(0.8f));
-                    g.drawRoundedRectangle (0, 0, width, height, height/2.0f, 0);
+                    g.drawRoundedRectangle (0, 0, static_cast<float>(width), static_cast<float>(height), static_cast<float>(height)/2.0f, 0);
                 }
             }
         }
@@ -425,9 +425,9 @@ public:
         Colour statusColour = slider.findColour(Slider::rotarySliderOutlineColourId).withMultipliedAlpha (0.8f);
 
 
-        const float min = slider.getMinimum();
-        const float max = slider.getMaximum();
-        const float zeroPos = -min/(max-min);
+        const double min = slider.getMinimum();
+        const double max = slider.getMaximum();
+        const auto zeroPos = -min/(max-min);
         bool isTwoValue = (style == Slider::SliderStyle::TwoValueVertical || style == Slider::SliderStyle::TwoValueHorizontal);
 
         if (slider.isHorizontal())
@@ -438,11 +438,15 @@ public:
 
             if (isTwoValue)
             {
-                clbar.addRoundedRectangle(Rectangle<float>(Point<float>(minSliderPos, iy), Point<float>(maxSliderPos, iy+sliderRadius)),sliderRadius/2.0,sliderRadius/2.0);
+                clbar.addRoundedRectangle(
+                    Rectangle<float>(Point<float>(minSliderPos, iy), Point<float>(maxSliderPos, iy+sliderRadius)),
+                        sliderRadius/2.0,sliderRadius/2.0);
             }
             else
             {
-                clbar.addRoundedRectangle(Rectangle<float>(Point<float>(x+width*zeroPos, iy), Point<float>(sliderPos, iy+sliderRadius)),sliderRadius/2.0,sliderRadius/2.0);
+                clbar.addRoundedRectangle(
+                    Rectangle<float>(Point<float>(x+width*zeroPos, iy), Point<float>(sliderPos, iy+sliderRadius)),
+                        sliderRadius/2.0,sliderRadius/2.0);
             }
         }
         else

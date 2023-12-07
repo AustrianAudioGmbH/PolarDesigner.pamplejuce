@@ -98,7 +98,7 @@ public:
         {
             auto abIn = context.getInputBlock();
             auto abOut = context.getOutputBlock();
-            auto L = abIn.getNumSamples();
+            size_t L = abIn.getNumSamples();
             auto nCh = jmin((int) spec.numChannels, (int) abIn.getNumChannels());
 
             int startIndex, blockSize1, blockSize2;
@@ -139,7 +139,7 @@ public:
     void getReadWritePositions (bool read, int numSamples, int& startIndex, int& blockSize1, int& blockSize2)
     {
         const int L = buffer.getNumSamples();
-        int pos = writePosition;
+        size_t pos = writePosition;
         if (read)
         {
             pos = static_cast<int> (static_cast<unsigned int> (writePosition) - delayInSamples);
@@ -158,8 +158,8 @@ public:
         }
         else
         {
-            startIndex = pos;
-            blockSize1 = jmin (L - pos, numSamples);
+            startIndex = static_cast<int>(pos);
+            blockSize1 = jmin (static_cast<int>(L - pos), numSamples);
             numSamples -= blockSize1;
             blockSize2 = numSamples <= 0 ? 0 : numSamples;
         }
@@ -171,6 +171,6 @@ private:
     float delay;
     unsigned int delayInSamples = 0;
     bool bypassed = false;
-    int writePosition = 0;
+    size_t writePosition = 0;
     AudioBuffer<float> buffer;
 };
