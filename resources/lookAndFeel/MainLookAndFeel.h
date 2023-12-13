@@ -74,7 +74,7 @@ public:
         setColour(ListBox::backgroundColourId, groupComponentBackgroundColor);
     }
 
-    ~MainLookAndFeel() {}
+    ~MainLookAndFeel() override {}
 
     Typeface::Ptr getTypefaceForFont(const Font& f) override
     {
@@ -87,6 +87,7 @@ public:
     void drawButtonBackground(Graphics& g, Button& button, const Colour& backgroundColour,
         bool isMouseOverButton, bool isButtonDown) override
     {
+        (void)backgroundColour;
         Rectangle<float> buttonArea(0.0f, 0.0f, button.getWidth(), button.getHeight());
 
         auto austrianAudioLogoImg = juce::Drawable::createFromImageData(BinaryData::austrianAudioLogo_svg, BinaryData::austrianAudioLogo_svgSize);
@@ -651,10 +652,10 @@ public:
         else if (button.getButtonText() == "Trim Slider Pointer")
         {
             g.setColour(Colours::red);
-            int pointerHeight = buttonArea.getHeight() * 0.05f;
+            int pointerHeight = static_cast<int> (buttonArea.getHeight() * 0.05f);
             int pointerX = 3.f;
-            int pointerY = buttonArea.getCentreY() - pointerHeight / 2;
-            int pointerWidth = buttonArea.getWidth() - 1.f;
+            int pointerY = static_cast<int> (buttonArea.getCentreY() - pointerHeight / 2);
+            int pointerWidth = static_cast<int> (buttonArea.getWidth() - 1.f);
 
             Path path;
             Point<float> point1(pointerX, pointerY);
@@ -714,7 +715,7 @@ public:
 
         int x = buttonArea.getX();
         int w = buttonArea.getWidth();
-        int h = button.getTopLevelComponent()->getHeight() * 0.023f;
+        int h = static_cast<int> (button.getTopLevelComponent()->getHeight() * 0.023f);
         int y = (buttonArea.getHeight() - h) / 2;
 
         auto justification = Justification::centred;
@@ -727,12 +728,12 @@ public:
         else if (button.getButtonText() == "Free Field")
         {
             y = buttonArea.proportionOfHeight(0.7f);
-            h = button.getTopLevelComponent()->getHeight() * 0.02f;
+            h = static_cast<int> (button.getTopLevelComponent()->getHeight() * 0.02f);
         }
         else if (button.getButtonText() == "Diffuse Field")
         {
             y = buttonArea.proportionOfHeight(0.7f);
-            h = button.getTopLevelComponent()->getHeight() * 0.018f;
+            h = static_cast<int> (button.getTopLevelComponent()->getHeight() * 0.018f);
         }
         else if (button.getButtonText() == "Terminate Spill"
             || button.getButtonText() == "Maximize Target"
@@ -759,7 +760,7 @@ public:
             g.setColour(button.isEnabled() ? mainTextColor : mainTextInactiveColor);
             font = button.isEnabled() ? terminatorBoldFont : terminatorRegularFont;
             justification = Justification::centredLeft;
-            h = button.getTopLevelComponent()->getHeight() * 0.015f;
+            h = static_cast<int> (button.getTopLevelComponent()->getHeight() * 0.015f);
             y = (buttonArea.getHeight() - h) / 2;
         }
         else if (button.getButtonText() == "01" ||
@@ -776,7 +777,7 @@ public:
             text = tmpText;
             font = button.isEnabled() ? terminatorBoldFont : terminatorRegularFont;
             justification = Justification::centred;
-            h = button.getTopLevelComponent()->getHeight() * 0.014f;
+            h = static_cast<int> (button.getTopLevelComponent()->getHeight() * 0.014f);
             y = (buttonArea.getHeight() - h) / 2;
         }
         else if (button.getButtonText().contains("TermLine"))
@@ -791,7 +792,7 @@ public:
             g.setColour(button.isEnabled() ? mainTextColor : mainTextInactiveColor);
             font = terminatorRegularFont;
             justification = Justification::centredLeft;
-            h = button.getTopLevelComponent()->getHeight() * 0.012f;
+            h = static_cast<int> (button.getTopLevelComponent()->getHeight() * 0.012f);
             w = buttonArea.proportionOfWidth(1.f);
         }
         else if (button.getButtonText() == "Eight Pattern" ||
@@ -827,6 +828,9 @@ public:
         const String& text, const Justification& position,
         GroupComponent& group) override
     {
+        (void)width;
+        (void)height;
+        (void)position;
         Rectangle<float> groupArea(0, 0, group.getWidth(), group.getHeight());
         g.setColour(groupComponentBackgroundColor);
 
@@ -848,7 +852,7 @@ public:
         int x = group.proportionOfWidth(0.06f);
         int y = 10.f;
         int w = group.proportionOfWidth(0.87f);
-        int h = group.getTopLevelComponent()->getHeight() * 0.025f;
+        int h = static_cast<int> (group.getTopLevelComponent()->getHeight() * 0.025f);
 
         if (text == "Preset")
         {
@@ -868,21 +872,21 @@ public:
 
         if (slider.getSliderStyle() == Slider::SliderStyle::LinearHorizontal)
         {
-            layout.sliderBounds.setBounds(localBounds.getWidth() * 0.07f, localBounds.getY(), localBounds.getWidth() * 0.42f, localBounds.getHeight());
-            layout.textBoxBounds.setBounds(localBounds.getWidth() * 0.71f, localBounds.getY(), localBounds.getWidth() * 0.29f, localBounds.getHeight());
+            layout.sliderBounds.setBounds(static_cast<int> (localBounds.getWidth() * 0.07f), localBounds.getY(), static_cast<int> (localBounds.getWidth() * 0.42f), localBounds.getHeight());
+            layout.textBoxBounds.setBounds(static_cast<int> (localBounds.getWidth() * 0.71f), localBounds.getY(), static_cast<int> (localBounds.getWidth() * 0.29f), localBounds.getHeight());
             layout.textBoxBounds.reduce(10, 10);
         }
         else if (slider.getSliderStyle() == Slider::SliderStyle::LinearVertical)
         {
             auto layoutWidth = slider.getTopLevelComponent()->getWidth() * 0.027f;
 
-            layout.sliderBounds.setBounds(localBounds.getRight() - layoutWidth + 1, localBounds.getY(), layoutWidth, localBounds.getHeight());
+            layout.sliderBounds.setBounds(static_cast<int> (localBounds.getRight() - layoutWidth + 1), localBounds.getY(), static_cast<int> (layoutWidth), localBounds.getHeight());
 
 //            Slider::TextEntryBoxPosition textBoxPos = slider.getTextBoxPosition();
 
-            int textBoxWidth = slider.getTopLevelComponent()->getWidth() * 0.05f;
-            int textBoxHeight = slider.getTopLevelComponent()->getHeight() * 0.029f;
-            int textBoxX = layout.sliderBounds.getTopLeft().getX() - textBoxWidth + 3.f;
+            int textBoxWidth = static_cast<int> (slider.getTopLevelComponent()->getWidth() * 0.05f);
+            int textBoxHeight = static_cast<int> (slider.getTopLevelComponent()->getHeight() * 0.029f);
+            int textBoxX = static_cast<int> (layout.sliderBounds.getTopLeft().getX() - textBoxWidth + 3.f);
             layout.textBoxBounds.setBounds(textBoxX, layout.sliderBounds.getCentreY() - textBoxHeight / 2, textBoxWidth, textBoxHeight);
         }
 
@@ -903,6 +907,8 @@ public:
         float maxSliderPos,
         const Slider::SliderStyle style, Slider& slider) override
     {
+        (void)minSliderPos;
+        (void)maxSliderPos;
         const float h = slider.getTopLevelComponent()->getHeight() * 0.005f;
         const float newDiameter = slider.getTopLevelComponent()->getHeight() * 0.024f;
 
@@ -936,6 +942,8 @@ public:
         float sliderPos, float minSliderPos, float maxSliderPos,
         const Slider::SliderStyle style, Slider& slider) override
     {
+        (void)minSliderPos;
+        (void)maxSliderPos;
         const float newDiameter = slider.getTopLevelComponent()->getHeight() * 0.024f;
 //        const float h = slider.getTopLevelComponent()->getHeight() * 0.005f;
 
@@ -972,10 +980,10 @@ public:
         auto textColor = label.isEnabled() ? mainTextColor : textButtonHoverBackgroundColor;
         g.setColour(textColor);
 
-        int x = labelArea.getX();
-        int w = labelArea.getWidth();
-        int h = label.getTopLevelComponent()->getHeight() * 0.018f;
-        int y = (labelArea.getHeight() - h) / 2;
+        int x = static_cast<int> (labelArea.getX());
+        int w = static_cast<int> (labelArea.getWidth());
+        int h = static_cast<int> (static_cast<float> (label.getTopLevelComponent()->getHeight()) * 0.018f);
+        int y = static_cast<int> ((labelArea.getHeight() - h) / 2);
 
         Font font(normalFont);
         font.setHeight(h);
@@ -988,6 +996,8 @@ public:
 
     void fillTextEditorBackground(Graphics& g, int width, int height, TextEditor& textEditor) override
     {
+       (void)width;
+       (void)height;
         Rectangle<float> textEditorArea(0, 0, textEditor.getWidth(), textEditor.getHeight());
         g.setColour(textButtonHoverBackgroundColor);
         g.fillRect(textEditorArea);
@@ -995,6 +1005,8 @@ public:
 
     void drawTextEditorOutline(Graphics& g, int width, int height, TextEditor& textEditor) override
     {
+        (void)width;
+        (void)height;
         Rectangle<float> textEditorArea(0, 0, textEditor.getWidth(), textEditor.getHeight());
         if (textEditor.isEnabled())
         {
@@ -1012,7 +1024,7 @@ public:
 
         int x = toggleButtonBounds.getX();
         int w = toggleButtonBounds.getWidth();
-        int h = button.getTopLevelComponent()->getHeight() * 0.023f;
+        int h = static_cast<int> (button.getTopLevelComponent()->getHeight() * 0.023f);
         int y = (button.getHeight() - h) / 2;
 
         font.setHeight(h);
@@ -1075,7 +1087,7 @@ public:
         {
             g.setColour(button.isEnabled() ? textButtonActiveRedFrameColor : textButtonActiveRedFrameColor.withAlpha(0.5f));
             Path outline;
-            outline.addRoundedRectangle(toggleButtonBounds.reduced(button.getWidth() * 0.19f, button.getHeight() * 0.28f), button.getHeight() * 0.23f, button.getHeight() * 0.23f);
+            outline.addRoundedRectangle(toggleButtonBounds.reduced(static_cast<int> (button.getWidth() * 0.19f), static_cast<int> (button.getHeight() * 0.28f)), button.getHeight() * 0.23f, button.getHeight() * 0.23f);
 
             g.strokePath(outline, PathStrokeType(2.0f));
 
@@ -1116,6 +1128,12 @@ public:
         bool isMouseOverButton,
         bool isButtonDown) override
     {
+        (void)x;
+        (void)y;
+        (void)isEnabled;
+        (void)isMouseOverButton;
+        (void)isButtonDown;
+
         const float newDiameter = h * 0.34f;
 
         Path p;
@@ -1146,6 +1164,11 @@ public:
         bool  	isMouseDown
     ) override
     {
+        (void)scrollbar;
+        (void)isScrollbarVertical;
+        (void)isMouseOver;
+        (void)isMouseDown;
+
         Path pathBgr;
         pathBgr.addRoundedRectangle(x, y, width, height, width / 2);
         g.setColour(textButtonFrameColor);
@@ -1164,7 +1187,7 @@ public:
             int deltaX = 0;
             
             if (SystemStats::getOperatingSystemName() == "iOS")
-                deltaX = buttonArea.proportionOfWidth(0.24f);
+                deltaX = static_cast<int> (buttonArea.proportionOfWidth (0.24f));
 
             int deltaY = 1;
             g.fillRoundedRectangle(buttonArea.reduced(deltaX, deltaY), corner);

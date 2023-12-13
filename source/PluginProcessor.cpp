@@ -24,17 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-#include <cfloat>
-
- static inline bool doublesEquivalent(double a, double b)
- {
-     return fabs(a - b) < DBL_EPSILON;
- }
-
- static inline bool floatsEquivalent(double a, double b)
- {
-     return fabs(a - b) < FLT_EPSILON;
- }
 
 
 /* We use versionHint of ParameterID from now on - rigorously! */

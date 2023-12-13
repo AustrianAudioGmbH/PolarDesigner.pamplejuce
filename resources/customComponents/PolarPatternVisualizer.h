@@ -75,7 +75,7 @@
 using namespace dsp;
 class PolarPatternVisualizer : public TextButton
 {
-    const float deg2rad = M_PI / 180.0f;
+    const float deg2rad = static_cast<float>(M_PI / 180.0f);
     const int degStep = 4;
     const int nLookUpSamples = 360;
 
@@ -105,7 +105,7 @@ public:
         hitArea.addEllipse(-1.0f, -1.0f, 2.0f, 2.0f);
     }
 
-    ~PolarPatternVisualizer()
+    ~PolarPatternVisualizer() override
     {
     }
 
@@ -274,12 +274,14 @@ public:
 
     void mouseEnter(const MouseEvent& e) override
     {
+        (void)e;
         mouseOver = true;
         repaint();
     }
 
     void mouseExit(const MouseEvent& e) override
     {
+        (void)e;
         mouseOver = false;
         repaint();
     }

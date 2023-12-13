@@ -71,7 +71,7 @@ class PolarDesignerAudioProcessorEditor  : public AudioProcessorEditor, private 
 {
 public:
     PolarDesignerAudioProcessorEditor (PolarDesignerAudioProcessor&, AudioProcessorValueTreeState&);
-    ~PolarDesignerAudioProcessorEditor();
+    ~PolarDesignerAudioProcessorEditor() override;
 
     //==============================================================================
     void paint (Graphics&) override;
@@ -132,7 +132,7 @@ private:
     LaF globalLaF;
     MainLookAndFeel mainLaF;
 
-    PolarDesignerAudioProcessor& processor;
+    PolarDesignerAudioProcessor& currentProcessor;
     AudioProcessorValueTreeState& valueTreeState;
     TooltipWindow tooltipWindow;
 

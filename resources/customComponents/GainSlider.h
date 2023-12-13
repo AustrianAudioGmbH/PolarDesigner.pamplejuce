@@ -51,12 +51,14 @@ public:
 
     void mouseMove(const MouseEvent& event) override
     {
+        (void)event;
         setTextBoxStyle(Slider::TextBoxLeft, true, -1, -1);
         repaint();
     }
 
     void mouseExit(const MouseEvent& event) override
     {
+        (void)event;
     }
 
 private:

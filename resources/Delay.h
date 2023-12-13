@@ -127,7 +127,7 @@ public:
 
 
             writePosition += L;
-            writePosition = writePosition % buffer.getNumSamples();
+            writePosition = writePosition % static_cast<size_t>(buffer.getNumSamples());
         }
     }
 
@@ -138,11 +138,11 @@ public:
 
     void getReadWritePositions (bool read, int numSamples, int& startIndex, int& blockSize1, int& blockSize2)
     {
-        const int L = buffer.getNumSamples();
+        const size_t L = static_cast<size_t>(buffer.getNumSamples());
         size_t pos = writePosition;
         if (read)
         {
-            pos = static_cast<int> (static_cast<unsigned int> (writePosition) - delayInSamples);
+            pos = static_cast<size_t> (static_cast<unsigned int> (writePosition) - delayInSamples);
         }
         if (pos < 0)
             pos = pos + L;

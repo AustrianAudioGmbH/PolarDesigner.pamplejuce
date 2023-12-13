@@ -78,8 +78,8 @@ public:
 
     void paint (juce::Graphics& g) override
     {
-        fontHeight = getTopLevelComponent()->getHeight() * 0.018f;
-        textArea = getLocalBounds().reduced(getLocalBounds().getWidth() * 0.06f, (getLocalBounds().getHeight() - fontHeight)/2);
+        fontHeight = static_cast<int>(getTopLevelComponent()->getHeight() * 0.018f);
+        textArea = getLocalBounds().reduced(static_cast<int>(getLocalBounds().getWidth() * 0.06f), (getLocalBounds().getHeight() - fontHeight)/2);
         g.fillAll (mainLaF.labelBackgroundColor);
 
         g.setColour (mainLaF.mainTextColor);
@@ -91,12 +91,12 @@ public:
 
     void resized() override
     {
-        fontHeight = getTopLevelComponent()->getHeight() * 0.018f;
+        fontHeight = static_cast<int>(getTopLevelComponent()->getHeight() * 0.018f);
 
         Font font(fontHeight);
-        textArea = getLocalBounds().reduced(getLocalBounds().getWidth() * 0.06f, (getLocalBounds().getHeight() - fontHeight) / 2);
+        textArea = getLocalBounds().reduced(static_cast<int>(getLocalBounds().getWidth() * 0.06f), (getLocalBounds().getHeight() - fontHeight) / 2);
         auto centredTextArea = Rectangle<int>(textArea.getX(), textArea.getY() - fontHeight/4, textArea.getWidth(), fontHeight);
-        int equalSignWidth = getLocalBounds().getWidth() * 0.042f;
+        int equalSignWidth = static_cast<int>(getLocalBounds().getWidth() * 0.042f);
         float rowProportion = static_cast<float>(font.getStringWidth(animatedString)) / static_cast<float>(centredTextArea.getWidth());
 
         if (animatedString.length() > 0)
@@ -105,7 +105,7 @@ public:
             equalSignWidth = font.getStringWidth(animatedString) / animatedString.length();
             if (font.getStringWidth(animatedString) > centredTextArea.getWidth())
             {
-                int nrOfSignsInNewRow = (rowProportion - 1.f) * (centredTextArea.getWidth()/ equalSignWidth);
+                int nrOfSignsInNewRow = static_cast<int>((rowProportion - 1.f) * (centredTextArea.getWidth()/ equalSignWidth));
                 rectArea = centredTextArea.withWidth(equalSignWidth).translated(equalSignWidth * nrOfSignsInNewRow, fontHeight);
             }
             else

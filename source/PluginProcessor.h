@@ -48,6 +48,17 @@
 #include <math.h>
 #include "../resources/Delay.h"
 
+#include <cfloat>
+
+static inline bool doublesEquivalent(double a, double b)
+{
+    return fabs(a - b) < DBL_EPSILON;
+}
+
+static inline bool floatsEquivalent(double a, double b)
+{
+    return fabs(a - b) < FLT_EPSILON;
+}
 
 using namespace juce;
 

@@ -70,7 +70,7 @@ class  DirectivityEQ : public Component, private Slider::Listener, private Label
         Slider* gainSlider = nullptr;
         PolarPatternVisualizer* polarPatternVisualizer = nullptr;
 
-        Point<int> handlePos;
+        Point<int> handlePos = {0,0};
     };
 
     // margins
@@ -88,14 +88,14 @@ class  DirectivityEQ : public Component, private Slider::Listener, private Label
             setAlwaysOnTop(true);
             setName("PathComponent");
             path.preallocateSpace(1000);    // !J! Arbitrary Magic Number
-        };
-        ~PathComponent() {};
+        }
+        ~PathComponent() {}
         void setBounds() 
         {
             int deltaX = 0;
             
             if (SystemStats::getOperatingSystemName() == "iOS")
-                deltaX = path.getBounds().getWidth() * 2;
+                deltaX = static_cast<int> (path.getBounds().getWidth() * 2);
 
             Component::setBounds(path.getBounds().toNearestInt().expanded(deltaX, 0));
         }
@@ -111,16 +111,16 @@ class  DirectivityEQ : public Component, private Slider::Listener, private Label
             setAlwaysOnTop(true);
             setName("PathComponent");
             path.preallocateSpace(1000);
-        };
-        ~BandLimitDividerHolder() {};
+        }
+        ~BandLimitDividerHolder() {}
         void setBounds()
         {
             int deltaX = 0;
             int deltaY = 0;
             if (SystemStats::getOperatingSystemName() == "iOS")
             {
-                deltaX = path.getBounds().getWidth();
-                deltaY = path.getBounds().getHeight();
+                deltaX = static_cast<int> (path.getBounds().getWidth());
+                deltaY = static_cast<int> (path.getBounds().getHeight());
             }
 
             Component::setBounds(path.getBounds().toNearestInt().expanded(deltaX, deltaY));
@@ -136,8 +136,8 @@ class  DirectivityEQ : public Component, private Slider::Listener, private Label
         RectangleComponent() : Component() {
             setAlwaysOnTop(true);
             setName("RectangleComponent");
-        };
-        ~RectangleComponent() {};
+        }
+        ~RectangleComponent() {}
 
         void setBounds(float x, float y, float width, float height)
         {
@@ -154,8 +154,8 @@ class  DirectivityEQ : public Component, private Slider::Listener, private Label
         BandKnobComponent() : Component() {
             setAlwaysOnTop(true);
             setName("BandKnobComponent");
-        };
-        ~BandKnobComponent() {};
+        }
+        ~BandKnobComponent() override {}
         void paint(Graphics& g) override
         {
             int circX = getLocalBounds().getCentreX();
@@ -178,6 +178,8 @@ class  DirectivityEQ : public Component, private Slider::Listener, private Label
             {
                 resultMainImg = bandHandleKnobImg->replaceColour(Colours::black, Colours::white);
             }
+            (void)resultMainImg; // !J! TODO: Remove
+
             bandHandleKnobImg->drawWithin(g, bandHandleKnobImageArea, juce::RectanglePlacement::centred, 1.f);
         }
 
@@ -253,7 +255,7 @@ public:
             addAndMakeVisible(&bandKnobs[i]);
             bandKnobs[i].addMouseListener(this, true);
         }
-    };
+    }
 
     void init ()
     {
@@ -261,9 +263,9 @@ public:
         zero = s.yMax / dyn;
     }
     
-    ~DirectivityEQ() {
+    ~DirectivityEQ() override {
         setLookAndFeel(nullptr);
-    };
+    }
 
     void paint (Graphics& g) override
     {
@@ -316,12 +318,17 @@ public:
             String axislabel;
             bool drawText = false;
 
-            if ((f == 20) || (f == 50) || (f == 100) || (f == 200) || (f == 500))
+            if (floatsEquivalent(f, 20) || floatsEquivalent(f, 50) || floatsEquivalent(f, 100) || floatsEquivalent(f, 200) || floatsEquivalent(f, 500))
             {
                 axislabel = String((int)f);
                 drawText = true;
             }
-            else if ((f == 1000) || (f == 2000) || (f == 5000) || (f == 10000) || (f == 20000))
+            //else if ((f == 1000) || (f == 2000) || (f == 5000) || (f == 10000) || (f == 20000))
+            else if (floatsEquivalent(f, 1000) ||
+                    floatsEquivalent(f, 2000) ||
+                    floatsEquivalent(f, 5000) ||
+                    floatsEquivalent(f, 10000) ||
+                    floatsEquivalent(f, 20000))
             {
                 axislabel = String((int)f/1000);
                 axislabel << "k";
@@ -340,7 +347,7 @@ public:
                     justification = Justification::right;
                     x = getWidth() - width;
                 }
-                g.drawText(axislabel, x, y, width, height, justification, true);
+                g.drawText(axislabel, static_cast<int> (x), static_cast<int> (y), static_cast<int> (width), static_cast<int> (height), justification, true);
             }
         }
 
@@ -375,15 +382,15 @@ public:
             p.clear();
         }
 
-        float lastRightBound;
-        float lastCircY;
+        float lastRightBound = 0;
+        float lastCircY = 0;
         int bandMargin = 20;
         int interpPointMargin = 15;
         int patternRectHeight = 14;
         int bandLimitDividerWidth = proportionOfWidth(0.005f);
-        int bandLimitDividerHolderY = mT / 2;
+        int bandLimitDividerHolderY = static_cast<int> (mT / 2);
         int bandLimitDividerHolderWidth = proportionOfWidth(0.017f);
-        int bandLimitDividerHolderHeight = dirToY(s.yMax) - 2.f;;
+        int bandLimitDividerHolderHeight = static_cast<int> (dirToY (s.yMax) - 2.f);;
         int bandLineThickness = proportionOfHeight(0.006f);
 
         // paint dirPaths and bandLimitPaths
@@ -392,15 +399,15 @@ public:
             BandElements& handle(elements.getReference(i));
 
             float rightBound = (handle.upperFrequencySlider == nullptr || nrActiveBands == i + 1) ?
-                                hzToX(s.fMax) : hzToX (processor.hzFromZeroToOne(i, handle.upperFrequencySlider->getValue()));
+                                hzToX(s.fMax) : static_cast<float> (hzToX (processor.hzFromZeroToOne (i, static_cast<float> (handle.upperFrequencySlider->getValue()))));
 
-            float circY = handle.dirSlider == nullptr ? dirToY(0.0f) : dirToY(handle.dirSlider->getValue());
+            float circY = handle.dirSlider == nullptr ? dirToY(0.0f) : dirToY(static_cast<float> (handle.dirSlider->getValue()));
 
             // paint band limits
             if (i != nrActiveBands - 1)
             {
                 Path& blPath = bandLimitPaths[i].getPath();
-                bandsWidth[i] = bandLimitPaths[i].getX() - mL + bandLimitDividerWidth/2;
+                bandsWidth[i] = static_cast<int> (bandLimitPaths[i].getX() - mL + bandLimitDividerWidth / 2);
                 blPath.addRectangle(rightBound - bandLimitDividerWidth/2, dirToY(s.yMax), bandLimitDividerWidth, dirToY(s.yMin) - mT);
 
                 g.setColour (mainLaF.textButtonFrameColor.withMultipliedAlpha(activeBandLimitPath == i ? 1.0f : 0.8f));
@@ -493,11 +500,11 @@ public:
         for (int i = 0; i < nrActiveBands; ++i)
         {
             BandElements& handle (elements.getReference(i));
-            float leftBound = handle.lowerFrequencySlider == nullptr ? hzToX (s.fMin) : hzToX (processor.hzFromZeroToOne(i-1, handle.lowerFrequencySlider->getValue()));
-            float rightBound = (handle.upperFrequencySlider == nullptr || nrActiveBands == i + 1) ? hzToX (s.fMax) : hzToX (processor.hzFromZeroToOne(i, handle.upperFrequencySlider->getValue()));
+            float leftBound = handle.lowerFrequencySlider == nullptr ? hzToX (s.fMin) : static_cast<float> (hzToX (processor.hzFromZeroToOne (i - 1, static_cast<float> (handle.lowerFrequencySlider->getValue()))));
+            float rightBound = (handle.upperFrequencySlider == nullptr || nrActiveBands == i + 1) ? hzToX (s.fMax) : static_cast<float> (hzToX (processor.hzFromZeroToOne (i, static_cast<float> (handle.upperFrequencySlider->getValue()))));
             float circX = (rightBound + leftBound) / 2;
-            float circY = handle.dirSlider == nullptr ? dirToY (0.0f) : dirToY (handle.dirSlider->getValue());
-            handle.handlePos.setXY(circX,circY);
+            float circY = handle.dirSlider == nullptr ? dirToY (0.0f) : dirToY (static_cast<float> (handle.dirSlider->getValue()));
+            handle.handlePos.setXY(static_cast<int> (circX), static_cast<int> (circY));
 
             bandKnobs[i].setBounds(circX - knobSize / 2, circY - knobSize / 2, knobSize, knobSize);
 
@@ -525,7 +532,7 @@ public:
             {
                 // draw tooltip showing frequency
                 if (activeBandLimitPath == i || tooltipValueBox[i]->isMouseOver() || tooltipValueBox[i]->isBeingEdited())
-                    drawTooltip(i, rightBound-70, dirToY(s.yMax)-OH, false);
+                    drawTooltip(i, static_cast<int> (rightBound - 70), static_cast<int> (dirToY (s.yMax) - OH), false);
                 else
                     tooltipValueBox[i]->setVisible(false);
             }
@@ -553,7 +560,7 @@ public:
     int hzToX(float hz)
     {
         float width = (float) getWidth() - mL - mR;
-        int xpos = mL + width * (log(hz/s.fMin) / log(s.fMax/s.fMin));
+        int xpos = static_cast<int> (mL + width * (log (hz / s.fMin) / log (s.fMax / s.fMin)));
         return xpos;
     }
 
@@ -736,11 +743,11 @@ public:
         mL = area.proportionOfHeight(0.13f);
 
         if (SystemStats::getOperatingSystemName() == "iOS")
-            dirPatternButtonWidth = mL;
+            dirPatternButtonWidth = static_cast<int> (mL);
         else
-            dirPatternButtonWidth = mL * 0.6f;
+            dirPatternButtonWidth = static_cast<int> (mL * 0.6f);
 
-        dirPatternButtonHeight = mL * 0.5f;
+        dirPatternButtonHeight = static_cast<int> (mL * 0.5f);
 
         frequencies.resize(numPixels);
         for (int i = 0; i < numPixels; ++i)
@@ -750,45 +757,45 @@ public:
         const float width = getWidth() - mL - mR;
         dirGridPath.clear();
         dyn = s.yMax - s.yMin;
-        int numgridlines = dyn/s.gridDiv+1;
+        int numgridlines = static_cast<int> (dyn / s.gridDiv + 1);
 
         for (int i=0; i < numgridlines; i++)
         {
             float db_val = s.yMax - i * s.gridDiv;
-            int ypos = dirToY(db_val);
+            int ypos = static_cast<int> (dirToY (db_val));
             dirGridPath.startNewSubPath(mL, ypos);
             dirGridPath.lineTo(mL + width, ypos);
             //Directivity primary buttons
             tbPrimDirButtons[i].setBounds(5.f, ypos, dirPatternButtonWidth, dirPatternButtonHeight);
-            tbPrimDirButtons[i].setCentrePosition(mL/2, ypos);
+            tbPrimDirButtons[i].setCentrePosition(static_cast<int> (mL / 2), ypos);
         }
 
         // add grid for super card, hyper card and broad card
         // and directivity secondary buttons
         smallDirGridPath.clear();
-        int ypos = dirToY(hCardFact);
+        int ypos = static_cast<int> (dirToY (hCardFact));
         smallDirGridPath.startNewSubPath(mL, ypos);
         smallDirGridPath.lineTo(mL + width, ypos);
         tbSecDirButtons[0].setBounds(5.f, ypos, dirPatternButtonWidth, dirPatternButtonHeight);
-        tbSecDirButtons[0].setCentrePosition(mL / 2, ypos);
+        tbSecDirButtons[0].setCentrePosition(static_cast<int> (mL / 2), ypos);
 
-        ypos = dirToY(sCardFact);
+        ypos = static_cast<int> (dirToY (sCardFact));
         smallDirGridPath.startNewSubPath(mL, ypos);
         smallDirGridPath.lineTo(mL + width, ypos);
         tbSecDirButtons[1].setBounds(5.f, ypos, dirPatternButtonWidth, dirPatternButtonHeight);
-        tbSecDirButtons[1].setCentrePosition(mL / 2, ypos);
+        tbSecDirButtons[1].setCentrePosition(static_cast<int> (mL / 2), ypos);
 
-        ypos = dirToY(bCardFact);
+        ypos = static_cast<int> (dirToY (bCardFact));
         smallDirGridPath.startNewSubPath(mL, ypos);
         smallDirGridPath.lineTo(mL + width, ypos);
         tbSecDirButtons[2].setBounds(5.f, ypos, dirPatternButtonWidth, dirPatternButtonHeight);
-        tbSecDirButtons[2].setCentrePosition(mL / 2, ypos);
+        tbSecDirButtons[2].setCentrePosition(static_cast<int> (mL / 2), ypos);
 
-        ypos = dirToY(rbCardFact);
+        ypos = static_cast<int> (dirToY (rbCardFact));
         smallDirGridPath.startNewSubPath(mL, ypos);
         smallDirGridPath.lineTo(mL + width, ypos);
         tbSecDirButtons[3].setBounds(5.f, ypos, dirPatternButtonWidth, dirPatternButtonHeight);
-        tbSecDirButtons[3].setCentrePosition(mL / 2, ypos);
+        tbSecDirButtons[3].setCentrePosition(static_cast<int> (mL / 2), ypos);
 
         // frequency grid
         hzGridPath.clear();
@@ -796,7 +803,17 @@ public:
         for (float f=s.fMin; f <= s.fMax; f += powf(10, floorf(log10(f)))) {
             int xpos = hzToX(f);
 
-            if ((f == 20) || (f == 50) || (f == 100) || (f == 200) || (f == 500) || (f == 1000) || (f == 2000) || (f == 5000) || (f == 10000) || (f == 20000))
+//            if ((f == 20) || (f == 50) || (f == 100) || (f == 200) || (f == 500) || (f == 1000) || (f == 2000) || (f == 5000) || (f == 10000) || (f == 20000))
+            if (floatsEquivalent(f, 20) ||
+                floatsEquivalent(f, 50) ||
+                floatsEquivalent(f, 100) ||
+                floatsEquivalent(f, 200) ||
+                floatsEquivalent(f, 500) ||
+                floatsEquivalent(f, 1000) ||
+                floatsEquivalent(f, 2000) ||
+                floatsEquivalent(f, 5000) ||
+                floatsEquivalent(f, 10000) ||
+                floatsEquivalent(f, 20000))
             {
                 hzGridPathBold.startNewSubPath(xpos, dirToY(s.yMax));
                 hzGridPathBold.lineTo(xpos, dirToY(s.yMin));
@@ -836,9 +853,9 @@ public:
 
     float calcAlphaOfDirPath(BandElements& elem)
     {
-        float maxGain = std::max(elem.gainSlider->getMaximum(), std::abs(elem.gainSlider->getMinimum()));
-        float absRange = elem.gainSlider->getMaximum() + std::abs(elem.gainSlider->getMinimum());
-        float gain = ((float) elem.gainSlider->getValue() + maxGain) / (7.0f/5.0f * absRange) + 2.0f/7.0f;
+        float maxGain = std::max(static_cast<float>(elem.gainSlider->getMaximum()), std::abs(static_cast<float>(elem.gainSlider->getMinimum())));
+        float absRange = static_cast<float>(elem.gainSlider->getMaximum()) + std::abs(static_cast<float>(elem.gainSlider->getMinimum()));
+        float gain = (static_cast<float>(elem.gainSlider->getValue()) + maxGain) / (7.0f/5.0f * absRange) + 2.0f/7.0f;
         
         if (!active)
         {
@@ -910,12 +927,12 @@ public:
 
         if (!isKnobTooltip)
         {
-            tooltipValueBox[tooltipIndex]->setBounds(xCoord, yCoord, getTopLevelComponent()->getWidth() * 0.06f, getTopLevelComponent()->getHeight() * 0.03f);
+            tooltipValueBox[tooltipIndex]->setBounds(xCoord, yCoord, static_cast<int>(getTopLevelComponent()->getWidth() * 0.06f), static_cast<int>(getTopLevelComponent()->getHeight() * 0.03f));
             tooltipValueBox[tooltipIndex]->setVisible(true);
         }
         else
         {
-            tooltipValueKnobBox[tooltipIndex]->setBounds(xCoord, yCoord, getTopLevelComponent()->getWidth() * 0.04f, getTopLevelComponent()->getHeight() * 0.03f);
+            tooltipValueKnobBox[tooltipIndex]->setBounds(xCoord, yCoord, static_cast<int>(getTopLevelComponent()->getWidth() * 0.04f), static_cast<int>(getTopLevelComponent()->getHeight() * 0.03f));
             tooltipValueKnobBox[tooltipIndex]->setVisible(true);
         }
     }
@@ -947,8 +964,9 @@ public:
                     return;
 
                 float attemptedVal = tooltipValueBox[i]->getText().getFloatValue();
-                if (attemptedVal == 0)
-                    attemptedVal = processor.hzFromZeroToOne(i, slider->getValue());
+
+                if (floatsEquivalent(attemptedVal, 0))
+                    attemptedVal = processor.hzFromZeroToOne(i, static_cast<float>(slider->getValue()));
 
                 float newValue = getXoverValueInRange (i, attemptedVal);
 
@@ -1096,7 +1114,8 @@ private:
     int activeBandLimitPath = -1;
     int nrActiveBands;
     int oldNrActiveBands;
-    float dyn, zero, scale;
+    float dyn, zero;
+//    float scale;
     bool soloActive;
     bool isDraggingDirPath = false;
     bool dirSliderLastChangedByDrag = false;

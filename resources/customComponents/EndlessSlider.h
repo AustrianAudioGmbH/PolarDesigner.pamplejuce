@@ -25,9 +25,9 @@ public:
         lastMoved = 0;
         prevMoved = 0;
         lastFilledElem = 17;
-    };
+    }
 
-    ~EndlessSlider() {}
+    ~EndlessSlider() override {}
 
     // set these callbacks where you use this class in order to get inc/dec messages
     std::function<void()> sliderValueSet;
@@ -51,6 +51,7 @@ public:
 
     void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override
     {
+        (void)event;
         currentMoved = -10*wheel.deltaY;
         lastMoved = currentMoved + prevMoved;
         sliderValue = jmap(lastMoved, static_cast<float>(proportionOfHeight(0.48f)),
@@ -74,7 +75,7 @@ public:
         int mappedY = 0;
         int elemWidth = 0;
         int counter = 0;
-        int r = sqrt((height * height) / 2); // circle radius
+        int r = static_cast<int>(sqrt(((height * height)) / 2)); // circle radius
 
         ColourGradient cg = ColourGradient(mainLaF.trimSliderMainColor, 
                                            bounds.getWidth() / 2, 
@@ -97,29 +98,29 @@ public:
             // calculate y when mouse out of component
             if (y > height)
             {
-                counter = std::abs(y / height);
+                counter = static_cast<int>(std::abs(y / height));
                 y -= height *counter;
             }
             else if (y < 0)
             {
-                counter = std::abs(y / height) + 1;
+                counter = static_cast<int>(std::abs(y / height) + 1);
                 y += height * counter;
             }
             // calculate y when mousePos in component
             if (y < height /2)
             {
-                mappedY = (-1) * (height / 2) + y;
+                mappedY = static_cast<int>((-1) * (height / 2) + y);
             }
-            else if (y == height / 2)
+            else if (floatsEquivalent(y, height / 2))
             {
                 mappedY = 0;
             }
             else if (y > height / 2)
             {
-                mappedY = y - height / 2;
+                mappedY = static_cast<int>(y - height / 2);
             }
             // calculate width change with circle equation
-            elemWidth = sqrt(r*r - (mappedY*mappedY)); 
+            elemWidth = static_cast<int>(sqrt(r*r - (mappedY*mappedY)));
 
             auto rect = Rectangle<float>(bounds.getWidth() * 0.22f,
                 y - (elemWidth / (numElem * 2)) / 2,
@@ -141,11 +142,13 @@ public:
 
     void mouseExit (const MouseEvent& e) override
     {
+        (void)e;
         repaint();
     }
 
     void mouseDoubleClick(const MouseEvent& e) override
     {
+        (void)e;
         lastMoved = 0;
         prevMoved = 0;
         sliderReset();
@@ -154,12 +157,13 @@ public:
 
     void mouseUp(const MouseEvent& e) override
     {
+        (void)e;
         prevMoved = lastMoved;
     }
 
     void resized() override
     {
-       if (lastMoved != 0)
+       if (!floatsEquivalent(lastMoved, 0))
        {
            lastMoved = proportionOfHeight(lastMovedPoportion);
            prevMoved = lastMoved;
@@ -180,8 +184,8 @@ private:
     int lastFilledElem;
     float prevMoved;
 
-    bool dragStarted;
-    bool isMouseUp;
+//    bool dragStarted;
+//    bool isMouseUp;
     float lastMovedPoportion = 0;
 
     float sliderValue;

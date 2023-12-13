@@ -29,8 +29,7 @@
 PolarDesignerAudioProcessorEditor::PolarDesignerAudioProcessorEditor (PolarDesignerAudioProcessor& p,
                                                           AudioProcessorValueTreeState& vts)
     : AudioProcessorEditor (&p), loadingFile(false),
-    presetListVisible(false),
-    processor (p),
+    presetListVisible(false), currentProcessor (p),
     valueTreeState(vts),
     directivityEqualiser (p),
     showTerminatorAnimationWindow(false),
@@ -42,8 +41,8 @@ PolarDesignerAudioProcessorEditor::PolarDesignerAudioProcessorEditor (PolarDesig
 {
     openGLContext.attachTo (*getTopLevelComponent());
 
-    nActiveBands = processor.getNBands();
-    syncChannelIdx = processor.getSyncChannelIdx();
+    nActiveBands = currentProcessor.getNBands();
+    syncChannelIdx = currentProcessor.getSyncChannelIdx();
 
     setResizable(true, true);
     setResizeLimits(EDITOR_MIN_WIDTH, EDITOR_MIN_HEIGHT, EDITOR_MAX_WIDTH, EDITOR_MAX_HEIGHT);
@@ -67,7 +66,7 @@ PolarDesignerAudioProcessorEditor::PolarDesignerAudioProcessorEditor (PolarDesig
     tmbABButton[0].setRadioGroupId(3344);
     tmbABButton[0].setButtonText("A");
     tmbABButton[0].addListener(this);
-    tmbABButton[0].setToggleState(processor.abLayerState, NotificationType::dontSendNotification);
+    tmbABButton[0].setToggleState(currentProcessor.abLayerState, NotificationType::dontSendNotification);
 
     tmbABButton[1].setClickingTogglesState(true);
     tmbABButton[1].setRadioGroupId(3344);
@@ -78,7 +77,7 @@ PolarDesignerAudioProcessorEditor::PolarDesignerAudioProcessorEditor (PolarDesig
     tbZeroDelayAtt = std::unique_ptr<ButtonAttachment>(new ButtonAttachment(valueTreeState, "zeroDelayMode", tbZeroDelay));
     tbZeroDelay.addListener(this);
     tbZeroDelay.setButtonText("Zero latency");
-    tbZeroDelay.setToggleState(processor.zeroDelayModeActive(), NotificationType::dontSendNotification);
+    tbZeroDelay.setToggleState(currentProcessor.zeroDelayModeActive(), NotificationType::dontSendNotification);
 
     addAndMakeVisible(&titlePreset);
     titlePreset.setTitle(String("Preset"));
@@ -154,8 +153,8 @@ PolarDesignerAudioProcessorEditor::PolarDesignerAudioProcessorEditor (PolarDesig
     tbCloseTerminatorControl.setToggleState(false, NotificationType::dontSendNotification);
     tbCloseTerminatorControl.addListener(this);
 
-    addAndMakeVisible(processor.termControlWaveform);
-    processor.termControlWaveform.setColours(mainLaF.labelBackgroundColor, mainLaF.textButtonActiveRedFrameColor);
+    addAndMakeVisible(currentProcessor.termControlWaveform);
+    currentProcessor.termControlWaveform.setColours(mainLaF.labelBackgroundColor, mainLaF.textButtonActiveRedFrameColor);
 
     addAndMakeVisible(&albPlaybackSpill);
 
@@ -225,7 +224,7 @@ PolarDesignerAudioProcessorEditor::PolarDesignerAudioProcessorEditor (PolarDesig
         addAndMakeVisible (&polarPatternVisualizers[i]);
         polarPatternVisualizers[i].setActive(true);
         polarPatternVisualizers[i].addListener(this);
-        polarPatternVisualizers[i].setDirWeight (slDir[i].getValue());
+        polarPatternVisualizers[i].setDirWeight (static_cast<float> (slDir[i].getValue()));
         polarPatternVisualizers[i].setMuteSoloButtons (&tgbSolo[i], &tgbMute[i]);
         polarPatternVisualizers[i].setColour (eqColours[i]);
 
@@ -375,7 +374,7 @@ void PolarDesignerAudioProcessorEditor::setTrimValue(int nBands) {
             lockBandsOnTop = true;
             break;
         }
-        else if (slDir[i].getValue() == -0.5f)
+        else if (doublesEquivalent(slDir[i].getValue(), -0.5f))
         {
             lockBandsOnTop = false;
             break;
@@ -592,7 +591,7 @@ void PolarDesignerAudioProcessorEditor::resized()
             if (polarPatternVisualizers[i].isPvisActive())
             {
                 //TODO: modify the function so that there is no danger of going outside the array --> i+1
-                bandFlex = bandLimitWidth[i+1] / dirEqSize;
+                bandFlex = bandLimitWidth[static_cast<size_t>(i)+1] / dirEqSize;
                 dirSlidersComponent.items.add(juce::FlexItem(slDir[i]).withFlex(bandFlex));
                 muteSoloModule.items.add(juce::FlexItem(muteSoloComponent[i]).withFlex(bandFlex));
 
@@ -601,7 +600,7 @@ void PolarDesignerAudioProcessorEditor::resized()
                 if (nActiveBands >= 4)
                     polarVisHalfWidth = (dirEqSize * 0.115f) / 2;
                 float polarVisHalfWidthFlex = polarVisHalfWidth / (dirEqSize + polarRightMarginDiff);
-                float bandFlexRelToPolarVisComp = bandLimitWidth[i + 1] / (dirEqSize + polarRightMarginDiff);
+                float bandFlexRelToPolarVisComp = bandLimitWidth[static_cast<size_t>(i) + 1] / (dirEqSize + polarRightMarginDiff);
                 float polarVisFlex = bandFlexRelToPolarVisComp / 2 + prevPolarVisFlex / 2;
                 //Add polarVisHalfWidthFlex only on first iteration
                 if (i == 0)
@@ -887,7 +886,7 @@ void PolarDesignerAudioProcessorEditor::resized()
         tbCloseTerminatorControl.setVisible(true);
         albPlaybackSpill.setVisible(!isTargetAquiring);
         albAcquiringTarget.setVisible(isTargetAquiring);
-        processor.termControlWaveform.setVisible(true);
+        currentProcessor.termControlWaveform.setVisible(true);
         tbTerminateSpill.setVisible(false);
         tbMaximizeTarget.setVisible(false);
         tbMaxTargetToSpill.setVisible(false);
@@ -896,7 +895,7 @@ void PolarDesignerAudioProcessorEditor::resized()
         fbTerminatorControlInComp.items.add(juce::FlexItem{ fbTerminatorControlCloseComp }.withFlex(0.12f));
         fbTerminatorControlInComp.items.add(juce::FlexItem{  }.withFlex(0.06f));
         fbTerminatorControlInComp.items.add(juce::FlexItem{ isTargetAquiring ? albAcquiringTarget : albPlaybackSpill }.withFlex(0.22f));
-        fbTerminatorControlInComp.items.add(juce::FlexItem{ processor.termControlWaveform }.withFlex(0.46f));
+        fbTerminatorControlInComp.items.add(juce::FlexItem{ currentProcessor.termControlWaveform }.withFlex(0.46f));
         fbTerminatorControlInComp.items.add(juce::FlexItem{  }.withFlex(0.06f));
     }
     else
@@ -909,7 +908,7 @@ void PolarDesignerAudioProcessorEditor::resized()
             tbMaxTargetToSpill.setVisible(false);
             albPlaybackSpill.setVisible(false);
             albAcquiringTarget.setVisible(false);
-            processor.termControlWaveform.setVisible(false);
+            currentProcessor.termControlWaveform.setVisible(false);
 
             switch (termStage)
             {
@@ -969,7 +968,7 @@ void PolarDesignerAudioProcessorEditor::resized()
             tbCloseTerminatorControl.setVisible(false);
             albPlaybackSpill.setVisible(false);
             albAcquiringTarget.setVisible(false);
-            processor.termControlWaveform.setVisible(false);
+            currentProcessor.termControlWaveform.setVisible(false);
             tbTerminateSpill.setVisible(true);
             tbMaximizeTarget.setVisible(true);
             tbMaxTargetToSpill.setVisible(true);
@@ -1039,6 +1038,7 @@ void PolarDesignerAudioProcessorEditor::resized()
 
 void PolarDesignerAudioProcessorEditor::buttonStateChanged(Button* button)
 {
+    (void)button;
 }
 
 void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
@@ -1106,7 +1106,7 @@ void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
     else if (button == &tbClosePresetList)
     {
         showPresetList(false);
-        processor.undoManager.undo();
+        currentProcessor.undoManager.undo();
     }
     else if (button == &tbSave)
     {
@@ -1118,9 +1118,9 @@ void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
         ibEqCtr[1].setToggleState(false, juce::NotificationType::dontSendNotification);
 
         if (!ibEqCtr[0].getToggleState() && !ibEqCtr[1].getToggleState())
-            processor.setEqState(0);
+            currentProcessor.setEqState(0);
         else
-            processor.setEqState(1);
+            currentProcessor.setEqState(1);
     }
     else if (button == &ibEqCtr[1])
     {
@@ -1128,9 +1128,9 @@ void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
         ibEqCtr[0].setToggleState(false, juce::NotificationType::dontSendNotification);
 
         if(!ibEqCtr[0].getToggleState() && !ibEqCtr[1].getToggleState())
-            processor.setEqState(0);
+            currentProcessor.setEqState(0);
         else
-            processor.setEqState(2);
+            currentProcessor.setEqState(2);
     }
     else if (button == &tbTerminateSpill)
     {
@@ -1197,7 +1197,7 @@ void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
         isTargetAquiring = false;
         setSideAreaEnabled(true);
         setMainAreaEnabled(true);
-        processor.stopTracking(2);
+        currentProcessor.stopTracking(2);
         termStage = terminatorStage::DISABLED;
         showActiveTerminatorStage(termStage);
         resized();
@@ -1221,7 +1221,7 @@ void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
         bool isToggled = button->getToggleState();
         if (isToggled < 0.5f)
         {
-            processor.setAbLayer(1);
+            currentProcessor.setAbLayer(1);
             button->setAlpha(getABButtonAlphaFromLayerState(isToggled));
             tmbABButton[1].setAlpha(getABButtonAlphaFromLayerState(!isToggled));
         }
@@ -1231,7 +1231,7 @@ void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
         bool isToggled = button->getToggleState();
         if (isToggled < 0.5f)
         {
-            processor.setAbLayer(0);
+            currentProcessor.setAbLayer(0);
             button->setAlpha(getABButtonAlphaFromLayerState(isToggled));
             tmbABButton[0].setAlpha(getABButtonAlphaFromLayerState(!isToggled));
         }
@@ -1273,7 +1273,7 @@ void PolarDesignerAudioProcessorEditor::buttonClicked (Button* button)
     }
     else if (button == &titlePresetUndoButton)
     {
-        processor.undoManager.undo();
+        currentProcessor.undoManager.undo();
         titlePresetUndoButton.setVisible(false);
         presetLoaded = false;
         titlePreset.setTitle(String("Preset"));
@@ -1299,6 +1299,7 @@ float PolarDesignerAudioProcessorEditor::getABButtonAlphaFromLayerState(int laye
 
 std::vector<float> PolarDesignerAudioProcessorEditor::getBandLimitWidthVector(float dirEqSize, float offsetPolVis)
 {
+    (void)offsetPolVis;
     //First calculate bandLimit vector
     std::vector<float> bandLimit;
     bandLimit.push_back(0);
@@ -1313,7 +1314,7 @@ std::vector<float> PolarDesignerAudioProcessorEditor::getBandLimitWidthVector(fl
     std::vector<float> bandLimitWidth;
     bandLimitWidth.push_back(dirEqSize);
     for (it = bandLimit.begin() + 1; it != bandLimit.end(); it++, i++) {
-        bandLimitWidth.push_back(bandLimit[i] - bandLimit[i - 1]);
+        bandLimitWidth.push_back(bandLimit[static_cast<size_t>(i)] - bandLimit[static_cast<size_t>(i) - 1]);
     }
 
     return bandLimitWidth;
@@ -1350,7 +1351,7 @@ void PolarDesignerAudioProcessorEditor::sliderValueChanged(Slider* slider)
         for (int i = 0; i < 5; i++)
         {
             if (slider == &slDir[i])
-                polarPatternVisualizers[i].setDirWeight(slider->getValue());
+                polarPatternVisualizers[i].setDirWeight(static_cast<float> (slider->getValue()));
         }
     }
     directivityEqualiser.repaint();
@@ -1360,14 +1361,14 @@ void PolarDesignerAudioProcessorEditor::sliderValueChanged(Slider* slider)
 void PolarDesignerAudioProcessorEditor::loadFile()
 {
     FileChooser myChooser ("Select Preset File",
-                           processor.getLastDir().exists() ? processor.getLastDir() : File::getSpecialLocation (File::userHomeDirectory),
+        currentProcessor.getLastDir().exists() ? currentProcessor.getLastDir() : File::getSpecialLocation (File::userHomeDirectory),
                            "*.json");
     if (myChooser.browseForFileToOpen())
     {
         loadingFile = true;
         File presetFile (myChooser.getResult());
-        processor.setLastDir(presetFile.getParentDirectory());
-        Result result = processor.loadPreset (presetFile);
+        currentProcessor.setLastDir(presetFile.getParentDirectory());
+        Result result = currentProcessor.loadPreset (presetFile);
         if (!result.wasOk()) {
             errorMessage = result.getErrorMessage();
             setMainAreaEnabled(false);
@@ -1384,13 +1385,13 @@ void PolarDesignerAudioProcessorEditor::loadFile()
 void PolarDesignerAudioProcessorEditor::saveFile()
 {
     FileChooser myChooser ("Save Preset File",
-                           processor.getLastDir().exists() ? processor.getLastDir() : File::getSpecialLocation (File::userHomeDirectory),
+        currentProcessor.getLastDir().exists() ? currentProcessor.getLastDir() : File::getSpecialLocation (File::userHomeDirectory),
                            "*.json");
     if (myChooser.browseForFileToSave (true))
     {
         File presetFile (myChooser.getResult());
-        processor.setLastDir(presetFile.getParentDirectory());
-        Result result = processor.savePreset (presetFile);
+        currentProcessor.setLastDir(presetFile.getParentDirectory());
+        Result result = currentProcessor.savePreset (presetFile);
         if (!result.wasOk()) {
             errorMessage = result.getErrorMessage();
             setMainAreaEnabled(false);
@@ -1405,7 +1406,7 @@ void PolarDesignerAudioProcessorEditor::saveFile()
 
 void PolarDesignerAudioProcessorEditor::loadSavedPresetsToList()
 {
-    File presetDir(processor.getLastDir().exists() ? processor.getLastDir() : File::getSpecialLocation(File::userHomeDirectory));
+    File presetDir(currentProcessor.getLastDir().exists() ? currentProcessor.getLastDir() : File::getSpecialLocation(File::userHomeDirectory));
     auto presetsArray = presetDir.findChildFiles(File::findFiles, false, "*.json");
 
     String jsonString;
@@ -1429,7 +1430,7 @@ void PolarDesignerAudioProcessorEditor::loadSavedPresetsToList()
 
 void PolarDesignerAudioProcessorEditor::nActiveBandsChanged()
 {
-    nActiveBands = processor.getNBands();
+    nActiveBands = currentProcessor.getNBands();
     // Set nrbands button state when preset load
     tmbNrBandsButton[nActiveBands-1].setToggleState(1, NotificationType::dontSendNotification);
 
@@ -1469,37 +1470,37 @@ void PolarDesignerAudioProcessorEditor::nActiveBandsChanged()
 
 void PolarDesignerAudioProcessorEditor::timerCallback()
 {
-    if (processor.repaintDEQ.get())
+    if (currentProcessor.repaintDEQ.get())
     {
-        processor.repaintDEQ = false;
+        currentProcessor.repaintDEQ = false;
         directivityEqualiser.repaint();
     }
-    if (processor.activeBandsChanged.get())
+    if (currentProcessor.activeBandsChanged.get())
     {
-        processor.activeBandsChanged = false;
+        currentProcessor.activeBandsChanged = false;
         nActiveBandsChanged();
     }
-    if (processor.zeroDelayModeChanged.get())
+    if (currentProcessor.zeroDelayModeChanged.get())
     {
-        processor.zeroDelayModeChanged = false;
+        currentProcessor.zeroDelayModeChanged = false;
         zeroDelayModeChange();
     }
-    if (processor.ffDfEqChanged.get())
+    if (currentProcessor.ffDfEqChanged.get())
     {
-        processor.ffDfEqChanged = false;
+        currentProcessor.ffDfEqChanged = false;
         setEqMode();
     }
 
     if (showTerminatorAnimationWindow)
     {
-        if (processor.info.isPlaying)
+        if (currentProcessor.info.isPlaying)
         {
             if (!isTargetAquiring)
             {
                 isTargetAquiring = true;
                 setSideAreaEnabled(false);
                 setMainAreaEnabled(false);
-                processor.startTracking(maximizeTarget ? false : true);
+                currentProcessor.startTracking(maximizeTarget ? false : true);
                 albAcquiringTarget.startAnimation("ACQUIRING TARGET   ", 
                                                   maximizeTarget ? "STOP PLAYBACK WHEN READY TO MAXIMIZE  " 
                                                   : "STOP PLAYBACK WHEN READY TO TERMINATE  ");
@@ -1514,7 +1515,7 @@ void PolarDesignerAudioProcessorEditor::timerCallback()
                 isTargetAquiring = false;
                 setSideAreaEnabled(true);
                 setMainAreaEnabled(true);
-                processor.stopTracking(1);
+                currentProcessor.stopTracking(1);
                 albAcquiringTarget.stopAnimation();
                 albPlaybackSpill.stopAnimation();
 
@@ -1539,7 +1540,7 @@ void PolarDesignerAudioProcessorEditor::timerCallback()
             isTargetAquiring = false;
             setSideAreaEnabled(true);
             setMainAreaEnabled(true);
-            processor.stopTracking(0);
+            currentProcessor.stopTracking(0);
             albAcquiringTarget.stopAnimation();
             albPlaybackSpill.stopAnimation();
             resized();
@@ -1549,17 +1550,17 @@ void PolarDesignerAudioProcessorEditor::timerCallback()
 
 void PolarDesignerAudioProcessorEditor::zeroDelayModeChange()
 {
-    tbZeroDelay.setToggleState(processor.zeroDelayModeActive(), NotificationType::dontSendNotification);
+    tbZeroDelay.setToggleState(currentProcessor.zeroDelayModeActive(), NotificationType::dontSendNotification);
 
-    nActiveBands = processor.getNBands();
+    nActiveBands = currentProcessor.getNBands();
     int nActive = nActiveBands;
 
-    if (processor.zeroDelayModeActive())
+    if (currentProcessor.zeroDelayModeActive())
     {
         nActive = 1;
         valueTreeState.getParameter("nrBands")->setValueNotifyingHost(valueTreeState.getParameter("nrBands")->convertTo0to1((0)));
     }
-    setSideAreaEnabled(!processor.zeroDelayModeActive());
+    setSideAreaEnabled(!currentProcessor.zeroDelayModeActive());
 
     for (int i = 0; i < 5; i++)
     {
@@ -1602,7 +1603,7 @@ void PolarDesignerAudioProcessorEditor::showPresetList(bool shouldShow)
     presetListVisible = shouldShow;
     tbLogoAA.setVisible(!shouldShow);
     if(shouldShow)
-        processor.undoManager.beginNewTransaction("Loading preset");
+        currentProcessor.undoManager.beginNewTransaction("Loading preset");
     resized();
 }
 
@@ -1767,7 +1768,7 @@ void PolarDesignerAudioProcessorEditor::mouseDown(const MouseEvent& event)
     if (presetListVisible && !presetArea.contains(event.mouseDownPosition))
     {
         showPresetList(false);
-        processor.undoManager.undo();
+        currentProcessor.undoManager.undo();
     }
 
     for (int i = 0; i < 5; i++)
@@ -1781,14 +1782,14 @@ void PolarDesignerAudioProcessorEditor::changeListenerCallback(ChangeBroadcaster
 {
     if (source == &lbUserPresets)
     {
-        File presetDir(processor.getLastDir().exists() ? processor.getLastDir() : File::getSpecialLocation(File::userHomeDirectory));
+        File presetDir(currentProcessor.getLastDir().exists() ? currentProcessor.getLastDir() : File::getSpecialLocation(File::userHomeDirectory));
 
         auto selectedPreset = lbUserPresets.getSelectedPresetName();
         auto presetFile = presetDir.findChildFiles(File::findFiles, false, String(selectedPreset + ".json"));
 
         if (presetFile.size() == 1)
         {
-            processor.loadPreset(presetFile.getFirst());
+            currentProcessor.loadPreset(presetFile.getFirst());
             lbFactoryPresets.deselectAll();
             if (lbUserPresets.isRowDoubleClicked())
             {
@@ -1801,14 +1802,14 @@ void PolarDesignerAudioProcessorEditor::changeListenerCallback(ChangeBroadcaster
     }
     else if (source == &lbFactoryPresets)
     {
-        File presetDir(processor.getLastDir().exists() ? processor.getLastDir() : File::getSpecialLocation(File::userHomeDirectory));
+        File presetDir(currentProcessor.getLastDir().exists() ? currentProcessor.getLastDir() : File::getSpecialLocation(File::userHomeDirectory));
 
         auto selectedPreset = lbFactoryPresets.getSelectedPresetName();
         auto presetFile = presetDir.findChildFiles(File::findFiles, false, String(selectedPreset + ".json"));
 
         if (presetFile.size() == 1)
         {
-            processor.loadPreset(presetFile.getFirst());
+            currentProcessor.loadPreset(presetFile.getFirst());
             lbUserPresets.deselectAll();
             if (lbFactoryPresets.isRowDoubleClicked())
             {
@@ -1875,7 +1876,7 @@ void PolarDesignerAudioProcessorEditor::setSideAreaEnabled(bool set)
     grpSync.setEnabled(set);
     grpPresetList.setEnabled(set);
 
-    if (processor.zeroDelayModeActive())
+    if (currentProcessor.zeroDelayModeActive())
         grpTerminatorControl.setEnabled(set);
     else
         grpTerminatorControl.setEnabled(true);
@@ -1885,7 +1886,7 @@ void PolarDesignerAudioProcessorEditor::setSideAreaEnabled(bool set)
 
 void PolarDesignerAudioProcessorEditor::setEqMode()
 {
-    int activeIdx = processor.getEqState();
+    int activeIdx = currentProcessor.getEqState();
     if (activeIdx == 0)
     {
         ibEqCtr[0].setToggleState(false, NotificationType::dontSendNotification);
@@ -1910,7 +1911,8 @@ void PolarDesignerAudioProcessorEditor::calculateLockedBands(int nBands, bool tr
     int minIt = -1;
     for (int i = 0; i < nBands; i++)
     {
-        if (slDir[i].isEnabled() && slDir[i].getValue() == (trimSliderIncr ? 1.f : -0.5f))
+        if (slDir[i].isEnabled() &&
+            (doublesEquivalent(slDir[i].getValue(), (trimSliderIncr ? 1.f : -0.5f))))
         {
             minIt = i;
             break;
@@ -1943,7 +1945,9 @@ void PolarDesignerAudioProcessorEditor::calculateLockedBands(int nBands, bool tr
     {
         if (slDir[i].isEnabled())
         {
-            if (slDir[i].getValue() == (trimSliderIncr ? 1.f : -0.5f) && i != maxIt)
+            if ((doublesEquivalent(slDir[i].getValue(),
+                                (trimSliderIncr ? 1.f : -0.5f)))
+                && (i != maxIt))
             {
                 bandLockedOnMinMax[i] = true;
             }
@@ -1964,7 +1968,7 @@ void PolarDesignerAudioProcessorEditor::calculateLockedBands(int nBands, bool tr
         for (int i = 0; i < nBands; i++)
         {
             if (slDir[i].isEnabled())
-                minBandValueDistances[i] = slDir[i].getValue() - slDir[minIt].getValue();
+                minBandValueDistances[i] = static_cast<float>(slDir[i].getValue() - slDir[minIt].getValue());
         }
         minBandValueDistancesSet = true;
     }
@@ -1977,10 +1981,10 @@ void PolarDesignerAudioProcessorEditor::calculateLockedBands(int nBands, bool tr
             {
                 if (trimSliderIncr)
                 {
-                    float sliderVal = (1.f - std::abs(slDir[maxIt].getValue()));
+                    float sliderVal = (static_cast<float> (1.f - std::abs (slDir[maxIt].getValue())));
                     if (slDir[maxIt].getValue() < 0)
                     {
-                        sliderVal = (1.f + std::abs(slDir[maxIt].getValue()));
+                        sliderVal = static_cast<float>((1.f + std::abs(slDir[maxIt].getValue())));
                     }
                     if (sliderVal >= std::abs(minBandValueDistances[maxIt]) + minBandValueDistances[i])
                     {
@@ -1989,7 +1993,7 @@ void PolarDesignerAudioProcessorEditor::calculateLockedBands(int nBands, bool tr
                 }
                 else
                 {
-                    float sliderVal = std::abs(0.5f + slDir[maxIt].getValue());
+                    float sliderVal = static_cast<size_t>(std::abs(0.5f + slDir[maxIt].getValue()));
                     if (sliderVal >= minBandValueDistances[maxIt] - minBandValueDistances[i])
                     {
                         bandLockedOnMinMax[i] = false;

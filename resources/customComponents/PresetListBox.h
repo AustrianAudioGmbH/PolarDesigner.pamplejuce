@@ -50,7 +50,7 @@ public:
         fb.items.add(juce::FlexItem(presets).withFlex(1.f));
         fb.performLayout(getLocalBounds());
 
-        presets.setRowHeight(fb.items[0].currentBounds.getHeight() * 0.1f);
+        presets.setRowHeight(static_cast<int>(fb.items[0].currentBounds.getHeight() * 0.1f));
     }
 
     void paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) override
@@ -64,7 +64,7 @@ public:
 
         g.setColour(mainLaF.mainTextColor);
 
-        int h = getTopLevelComponent()->getHeight() * 0.023f;
+        int h = static_cast<int>(getTopLevelComponent()->getHeight() * 0.023f);
         int y = (height - h) / 2;
 
         Font font(mainLaF.normalFont);
@@ -135,9 +135,10 @@ private:
     {
     public:
         explicit PresetListHeaderComponent(PresetListBox& o)
-            : Button({}),
-            owner(o)
+            : Button({})
+//            owner(o)
         {
+            (void)o;
             setToggleable(true);
             setClickingTogglesState(true);
             setSize(0, 30);
@@ -145,13 +146,15 @@ private:
 
         void paintButton(Graphics& g, bool isMouseOverButton, bool isButtonDown) override
         {
+            (void)isMouseOverButton;
+            (void)isButtonDown;
             Rectangle<float> buttonArea(0, 0, getWidth(), getHeight());
             g.fillAll(mainLaF.groupComponentBackgroundColor);
 
             int x = 0;
-            int w = buttonArea.getWidth()*0.65f;
-            int h = getTopLevelComponent()->getHeight() * 0.023f;
-            int y = (buttonArea.getHeight() - h) / 2;
+            int w = static_cast<int>(buttonArea.getWidth()*0.65f);
+            int h = static_cast<int>(getTopLevelComponent()->getHeight() * 0.023f);
+            int y = static_cast<int>((buttonArea.getHeight() - h) / 2);
 
             g.setColour(mainLaF.textButtonHoverBackgroundColor);
 
@@ -162,7 +165,7 @@ private:
         }
 
     private:
-        PresetListBox& owner;
+//        PresetListBox& owner;
         MainLookAndFeel mainLaF;
     };
 

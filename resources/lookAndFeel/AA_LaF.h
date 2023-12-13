@@ -105,7 +105,7 @@ public:
 
     }
 
-    ~LaF() {}
+    ~LaF()  override {}
 
     Typeface::Ptr getTypefaceForFont (const Font& f) override
     {
@@ -118,7 +118,7 @@ public:
     }
     Font getLabelFont (Label& label) override
     {
-        //return label.getFont();
+        (void)label;
         Font font(aaRegular);
         font.setHeight(18.0f);
         return font;
@@ -133,6 +133,8 @@ public:
 
     Font getTextButtonFont (TextButton& button, int height) override
     {
+        (void)button;
+        (void)height;
         Font font(aaRegular);
         font.setHeight(18.0f);
         return font;
@@ -445,7 +447,7 @@ public:
             else
             {
                 clbar.addRoundedRectangle(
-                    Rectangle<float>(Point<float>(x+width*zeroPos, iy), Point<float>(sliderPos, iy+sliderRadius)),
+                    Rectangle<float>(Point<float>(static_cast<float> (x + width * (zeroPos)), iy), Point<float>(sliderPos, iy+sliderRadius)),
                         sliderRadius/2.0,sliderRadius/2.0);
             }
         }
@@ -454,7 +456,7 @@ public:
             const float ix = x + width * 0.5f - sliderRadius * 0.5f;
             Rectangle<float> r (ix, y - sliderRadius * 0.5f, sliderRadius, height + sliderRadius);
             slbg.addRoundedRectangle (r,sliderRadius/2.0,sliderRadius/2.0);
-            clbar.addRoundedRectangle(Rectangle<float>(Point<float>(ix+1.0f,y+ height * (1.0f-zeroPos)), Point<float>(ix-1.0f+sliderRadius,sliderPos)),sliderRadius/2.0,sliderRadius/2.0);
+            clbar.addRoundedRectangle(Rectangle<float>(Point<float>(ix+1.0f, static_cast<float> (y + height * (1.0f - zeroPos))), Point<float>(ix-1.0f+sliderRadius,sliderPos)),sliderRadius/2.0,sliderRadius/2.0);
         }
 
 
@@ -490,8 +492,8 @@ public:
         const float ry = centreY - radius;
         const float rw = radius * 2.0f;
 
-        const float min = slider.getMinimum();
-        const float max = slider.getMaximum();
+        const float min = static_cast<const float> (slider.getMinimum());
+        const float max = static_cast<const float> (slider.getMaximum());
         const float zeroPos = -min/(max-min);
         const float zeroAngle =rotaryStartAngle + zeroPos * (rotaryEndAngle - rotaryStartAngle);
         const float angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
@@ -733,7 +735,7 @@ public:
             g.setFont(aaRegular);
             g.setFont(height-1);
             g.setColour (isOn ? button.findColour(ToggleButton::tickColourId) : Colours::white);
-            g.drawText(isOn ? "ON" : "OFF" , 0, 0, width, height, Justification::centred);
+            g.drawText(isOn ? "ON" : "OFF" , 0, 0, (int) width, (int) height, Justification::centred);
 
         }
 
@@ -800,8 +802,8 @@ public:
         Path p;
         Path stroke;
         stroke.addRoundedRectangle(Rectangle<float>(-0.5f, -5.0f, 1.0f, 10.0f), 0.1f, 0.1f);
-        p.addPath(stroke, AffineTransform().rotation(0.25f*M_PI));
-        p.addPath(stroke, AffineTransform().rotation(-0.25f*M_PI));
+        p.addPath(stroke, AffineTransform().rotation(static_cast<float> (0.25f * M_PI)));
+        p.addPath(stroke, AffineTransform().rotation(static_cast<float> (-0.25f * M_PI)));
         p.scaleToFit (0, 0, height * 2.0f, height, true);
         return p;
     }
@@ -810,6 +812,8 @@ public:
                                     const String& text, const Justification& position,
                                     GroupComponent& group) override
     {
+        (void)height;
+        (void)group;
         Rectangle<int> r(6,0,width-6,15);
         g.setColour(ClText);
         g.setFont(aaRegular);
@@ -834,6 +838,9 @@ public:
                        int buttonX, int buttonY, int buttonW, int buttonH,
                        ComboBox& box) override
     {
+        (void)width;
+        (void)height;
+        (void)isButtonDown;
         //const auto cornerSize = box.findParentComponentOfClass<ChoicePropertyComponent>() != nullptr ? 0.0f : 3.0f;
         //        const Rectangle<int> boxBounds (0, 0, width, height);
         //
