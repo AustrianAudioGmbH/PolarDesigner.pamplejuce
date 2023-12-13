@@ -67,8 +67,8 @@ public:
     const Colour ClRotSliderArrowShadow = Colour(0x445D5D5D);
     const Colour ClSliderFace = Colour(0xFF191919);
     const Colour ClText = Colour(0xFFFFFFFF);
-    const Colour ClTextTextboxbg = Colour(0xFF000000);
-    const Colour ClSeperator = Colour(0xFF979797);
+    const Colour ClTextTextboxBackground = Colour(0xFF000000);
+    const Colour ClSeparator = Colour(0xFF979797);
 //    const Colour ClWidgetColours[4] = {
 //        Colour(0xFF00CAFF), Colour(0xFF4FFF00), Colour(0xFFFF9F00), Colour(0xFFD0011B)
 //    };
@@ -241,7 +241,7 @@ public:
         auto h = (float) bounds.getHeight();
         Path p;
         p.addRoundedRectangle(x, y, w, h, h/2.0f);
-        g.setColour (ClTextTextboxbg.withMultipliedAlpha(alpha));
+        g.setColour (ClTextTextboxBackground.withMultipliedAlpha(alpha));
         g.fillPath (p);
 
         if (! label.isBeingEdited())
@@ -299,7 +299,7 @@ public:
         {
             Path p;
             p.addRoundedRectangle(static_cast<float>(0), static_cast<float>(0), static_cast<float>(width), static_cast<float>(height), 12.0f);
-            //g.setColour (ClTextTextboxbg);
+            //g.setColour (ClTextTextboxBackground);
             g.setColour (textEditor.findColour (TextEditor::backgroundColourId));
             g.fillPath (p);
         }
@@ -421,8 +421,8 @@ public:
                                      const Slider::SliderStyle style, Slider& slider) override
     {
         const float sliderRadius = 8.f; //getSliderThumbRadius (slider) - 5.0f;
-        Path slbg;
-        Path clbar;
+        Path sliderBackgroundPath;
+        Path controlBarPath;
 
         Colour statusColour = slider.findColour(Slider::rotarySliderOutlineColourId).withMultipliedAlpha (0.8f);
 
@@ -436,17 +436,17 @@ public:
         {
             const auto iy = static_cast<float> (static_cast<float> (y) + static_cast<float> (height) * 0.5f - sliderRadius * 0.5f);
             Rectangle<float> r (static_cast<float> (static_cast<float> (x) - sliderRadius * 0.5f), iy, static_cast<float> (static_cast<float> (width) + sliderRadius), sliderRadius);
-            slbg.addRoundedRectangle (r,static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
+            sliderBackgroundPath.addRoundedRectangle (r,static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
 
             if (isTwoValue)
             {
-                clbar.addRoundedRectangle(
+                controlBarPath.addRoundedRectangle(
                     Rectangle<float>(Point<float>(minSliderPos, iy), Point<float>(maxSliderPos, iy+sliderRadius)),
                         static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
             }
             else
             {
-                clbar.addRoundedRectangle(
+                controlBarPath.addRoundedRectangle(
                     Rectangle<float>(Point<float>(static_cast<float> (x + width * (zeroPos)), iy), Point<float>(sliderPos, iy+sliderRadius)),
                         static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
             }
@@ -455,18 +455,18 @@ public:
         {
             const auto ix = static_cast<float> (static_cast<float> (x) + static_cast<float> (width) * 0.5f - sliderRadius * 0.5f);
             Rectangle<float> r (ix, static_cast<float> (y) - sliderRadius * 0.5f, sliderRadius, static_cast<float> (height) + sliderRadius);
-            slbg.addRoundedRectangle (r,static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
-            clbar.addRoundedRectangle(Rectangle<float>(Point<float>(ix+1.0f, static_cast<float> (y + height * (1.0f - zeroPos))), Point<float>(ix-1.0f+sliderRadius,sliderPos)),static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
+            sliderBackgroundPath.addRoundedRectangle (r,static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
+            controlBarPath.addRoundedRectangle(Rectangle<float>(Point<float>(ix+1.0f, static_cast<float> (y + height * (1.0f - zeroPos))), Point<float>(ix-1.0f+sliderRadius,sliderPos)),static_cast<float> (sliderRadius/2.0),static_cast<float> (sliderRadius/2.0));
         }
 
 
         g.setColour(ClSliderFace);
-        g.fillPath(slbg);
+        g.fillPath(sliderBackgroundPath);
         g.setColour(statusColour);
-        g.fillPath(clbar);
+        g.fillPath(controlBarPath);
         g.setColour(ClFaceShadowOutline);
 
-        g.strokePath(slbg, PathStrokeType(1.0f));
+        g.strokePath(sliderBackgroundPath, PathStrokeType(1.0f));
 
 
     }
@@ -820,7 +820,7 @@ public:
         g.setFont(20.0f);
         g.drawFittedText (text, r, position,1,0.f);
 
-        g.setColour(ClSeperator);
+        g.setColour(ClSeparator);
         g.drawLine(0, 18, static_cast<float> (width), 18 ,.8f);
     }
     void positionComboBoxText (ComboBox& box, Label& label) override
