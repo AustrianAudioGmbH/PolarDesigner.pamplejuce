@@ -109,7 +109,7 @@ private:
     const int maxNumberBands = 5;
     int nActiveBands;
     int syncChannelIdx;
-    int oldAbLayerState;
+//    int oldAbLayerState;
 
     float trimSliderPrevPos = 0.22f;
     float minBandValueDistances[5];
@@ -118,7 +118,7 @@ private:
     int maxIt = 0;
 
     bool loadingFile;
-    bool recordingDisturber;
+//    bool recordingDisturber;
     bool presetListVisible;
     bool presetLoaded = false;
 

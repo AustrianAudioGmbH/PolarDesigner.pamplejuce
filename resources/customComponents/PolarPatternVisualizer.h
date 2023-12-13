@@ -77,7 +77,7 @@ class PolarPatternVisualizer : public TextButton
 {
     const float deg2rad = static_cast<float>(M_PI / 180.0f);
     const int degStep = 4;
-    const int nLookUpSamples = 360;
+//    const int nLookUpSamples = 360;
 
 public:
     PolarPatternVisualizer()

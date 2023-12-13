@@ -229,7 +229,7 @@ private:
     
     std::atomic<float>* nBandsPtr;
     std::atomic<float>* syncChannelPtr;
-    float oldSyncChannelPtr;
+//    float oldSyncChannelPtr;
     std::atomic<float>* xOverFreqs[4];
     std::atomic<float>* dirFactors[5];
     float oldDirFactors[5];
