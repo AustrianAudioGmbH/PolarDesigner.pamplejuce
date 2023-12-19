@@ -613,15 +613,15 @@ PolarDesignerAudioProcessor::PolarDesignerAudioProcessor() : AudioProcessor (Bus
 
      // !J! Some Hosts call setStateInformation before prepareToPlay...
      // filter bank
-     filterBankBuffer.setSize (N_CH_IN * 5, currentBlockSize);
+     filterBankBuffer.setSize (N_CH_IN * 5, 0);
      filterBankBuffer.clear();
      firFilterBuffer.setSize (5, firLen);
      firFilterBuffer.clear();
-     omniEightBuffer.setSize (2, currentBlockSize);
+     omniEightBuffer.setSize (2, 0);
      omniEightBuffer.clear();
 
      computeAllFilterCoefficients();
-     initAllConvolvers();
+
      repaintDEQ = true;
  }
 

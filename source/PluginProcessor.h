@@ -264,8 +264,8 @@ private:
     AudioBuffer<float> omniEightBuffer; // holds omni and fig-of-eight signals, size: 2
     dsp::Convolution convolvers[10]; // holds 2*nBands mono convolvers
     
-    double currentSampleRate;
-    int currentBlockSize;
+    double currentSampleRate = 0;
+    int currentBlockSize = 0;
 
     //==============================================================================
     void resetXoverFreqs();
