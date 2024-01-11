@@ -38,7 +38,6 @@ jobs:
           - name: Windows
             os: windows-latest
             pluginval-binary: ./pluginval.exe
-            ccache: sccache
 
     steps:
 
@@ -53,6 +52,9 @@ jobs:
       # Thanks to McMartin & co https://forum.juce.com/t/list-of-juce-dependencies-under-linux/15121/44
       run: |
         sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev xvfb ninja-build
+        # downgrade gcc to workaround 22.04 and C++20 issue 
+        # see: https://github.com/actions/runner-images/issues/8659
+        sudo apt-get install -y --allow-downgrades libc6=2.35-0ubuntu3.5 libc6-dev=2.35-0ubuntu3.5 libstdc++6=12.3.0-1ubuntu1~22.04 libgcc-s1=12.3.0-1ubuntu1~22.04
         sudo /usr/bin/Xvfb $DISPLAY &
 
     - name: Cache IPP (Windows)
@@ -60,30 +62,30 @@ jobs:
       id: cache-ipp
       uses: actions/cache@v3
       with:
-        key: ipp-v1
+        key: ipp-v2
         path: C:\Program Files (x86)\Intel\oneAPI\ipp
 
     - name: Install IPP (Windows)
       if: (runner.os == 'Windows') && (steps.cache-ipp.outputs.cache-hit != 'true')
       shell: bash
       run: |
-        curl --output oneapi.exe https://registrationcenter-download.intel.com/akdlm/irc_nas/19078/w_BaseKit_p_2023.0.0.25940_offline.exe
+        curl --output oneapi.exe https://registrationcenter-download.intel.com/akdlm/IRC_NAS/8d158661-ca8f-4e66-b5ea-3e0b3d00836a/w_ipp_oneapi_p_2021.10.1.15_offline.exe
         ./oneapi.exe -s -x -f oneapi
         ./oneapi/bootstrapper.exe -s -c --action install --components=intel.oneapi.win.ipp.devel --eula=accept -p=NEED_VS2022_INTEGRATION=1 --log-dir=.
 
-    - name: Save IPP cache even on job fail
+    - name: Save IPP cache (even on CI fail)
       if: runner.os == 'Windows' && (steps.cache-ipp.outputs.cache-hit != 'true')
       uses: actions/cache/save@v3
       with:
         path: C:\Program Files (x86)\Intel\oneAPI\ipp
-        key: ipp-v1
+        key: ipp-v2
 
     # This lets us use sscache on Windows
     # We need to install ccache here for Windows to grab the right version
     - name: Install Ninja (Windows)
       if: runner.os == 'Windows'
       shell: bash
-      run: choco install ninja ccache
+      run: choco install ninja
 
     - name: Install macOS Deps
       if: ${{ matrix.name == 'macOS' }}
@@ -94,11 +96,8 @@ jobs:
       with:
         submodules: true # Get JUCE populated
 
-    - name: ccache
-      uses: hendrikmuhs/ccache-action@main
-      with:
-        key: v3-${{ matrix.os }}-${{ matrix.type }}
-        variant: ${{ matrix.ccache }}
+    - name: Cache the build
+      uses: mozilla-actions/sccache-action@v0.0.3
 
     - name: Import Certificates (macOS)
       uses: apple-actions/import-codesign-certs@v2 # only exists as a tag right now
@@ -128,10 +127,12 @@ jobs:
     - name: Set additional env vars for next steps
       shell: bash
       run: |
-        echo "ARTIFACTS_PATH=${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}" >> $GITHUB_ENV
-        echo "VST3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
-        echo "AU_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
-        echo "AUV3_PATH=${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV          
+        ARTIFACTS_PATH=${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
+        echo "ARTIFACTS_PATH=$ARTIFACTS_PATH" >> $GITHUB_ENV
+        echo "VST3_PATH=$ARTIFACTS_PATH/VST3/${{ env.PRODUCT_NAME }}.vst3" >> $GITHUB_ENV
+        echo "AU_PATH=$ARTIFACTS_PATH/AU/${{ env.PRODUCT_NAME }}.component" >> $GITHUB_ENV
+        echo "AUV3_PATH=$ARTIFACTS_PATH/AUv3/${{ env.PRODUCT_NAME }}.appex" >> $GITHUB_ENV          
+        echo "STANDALONE_PATH=$ARTIFACTS_PATH/Standalone/${{ env.PRODUCT_NAME }}.app" >> $GITHUB_ENV
         echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
         #- name: Pluginval
@@ -149,16 +150,17 @@ jobs:
         # Each plugin must be code signed
         codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.VST3_PATH }}" --deep --strict --options=runtime --timestamp
         codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.AU_PATH }}" --deep --strict --options=runtime --timestamp
+        codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}" --deep --strict --options=runtime --timestamp
 
     - name: Add Custom Icons (macOS)
       if: ${{ matrix.name == 'macOS' }}
       working-directory: ${{ env.BUILD_DIR }}
       run: |
         # add the icns as its own icon resource (meta!)
-        sips -i ../packaging/pamplejuce.icns
+        sips -i packaging/pamplejuce.icns
         
         # Grab the resource, put in tempfile
-        DeRez -only icns ../packaging/pamplejuce.icns > /tmp/icons
+        DeRez -only icns packaging/pamplejuce.icns > /tmp/icons
         
         # Stuff the resource into the strange Icon? file's resource fork
         Rez -a /tmp/icons -o "${{ env.VST3_PATH }}/Icon"$'\r'
@@ -171,6 +173,8 @@ jobs:
     - name: Create DMG, Notarize and Staple (macOS)
       if: ${{ matrix.name == 'macOS' }}
       run: |
+        # workaround for https://github.com/LinusU/node-appdmg/issues/234
+        python3 -m pip install setuptools
         npm install -g appdmg
         mkdir -p packaging/dmg
         
@@ -178,8 +182,9 @@ jobs:
         sudo mkdir -m 755 -p /Library/Audio/Plug-Ins/Components && sudo mkdir -m 755 -p /Library/Audio/Plug-Ins/VST3
         ln -s /Library/Audio/Plug-Ins/Components "packaging/dmg/Your Mac's Component folder"
         ln -s /Library/Audio/Plug-Ins/VST3 "packaging/dmg/Your Mac's VST3 folder"
-        mv "${{ env.ARTIFACTS_PATH }}/VST3/${{ env.PRODUCT_NAME }}.vst3" packaging/dmg
-        mv "${{ env.ARTIFACTS_PATH }}/AU/${{ env.PRODUCT_NAME }}.component" packaging/dmg
+        mv "${{ env.VST3_PATH }}" packaging/dmg
+        mv "${{ env.AU_PATH }}" packaging/dmg
+        mv "${{ env.STANDALONE_PATH }}" packaging/dmg
         
         # Run appdmg to create the .dmg
         cd packaging && appdmg dmg.json "${{ env.ARTIFACT_NAME}}.dmg"
@@ -199,7 +204,7 @@ jobs:
         iscc "packaging\installer.iss"
         mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
         dotnet tool install --global AzureSignTool 
-        AzureSignTool sign -v -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.digicert.com -v "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
+        AzureSignTool sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.digicert.com -v "${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
 
     - name: Upload Exe (Windows)
       if: ${{ matrix.name == 'Windows' }}
